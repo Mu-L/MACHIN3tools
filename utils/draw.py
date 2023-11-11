@@ -504,7 +504,7 @@ def draw_split_row(self, layout, prop='prop', text='', label='Label', factor=0.2
     row = layout.row(align=align)
     split = row.split(factor=factor, align=align)
     
-    text = text if text else str(getattr(self, prop)) if getattr(self, prop) in [True, False] else ''
+    text = text if text else str(getattr(self, prop)) if str(getattr(self, prop)) in ['True', 'False'] else ''
     split.prop(self, prop, text=text, toggle=toggle, expand=expand)
 
     if label:
