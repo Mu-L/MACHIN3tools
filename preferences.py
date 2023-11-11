@@ -640,7 +640,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         draw_split_row(self, column, prop='registration_debug', label='Print Addon Registration Output in System Console')
 
 
-        # VIEW 3D settings
+        # VIEW 3D
 
         if any([getattr(bpy.types, f'MACHIN3_{name}', False) for name in has_sidebar]):
             bb = b.box()

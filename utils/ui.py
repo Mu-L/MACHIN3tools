@@ -116,10 +116,6 @@ def get_region_space_co2d(context, co2d=Vector()):
     return Vector((context.region.x, context.region.y)) - co2d
 
 
-
-
-
-
 # CURSOR - TODO: remove
 
 def init_cursor(self, event, offsetx=0, offsety=20):
