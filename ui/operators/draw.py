@@ -8,7 +8,7 @@ from ... utils.ui import init_timer_modal, set_countdown, get_timer_progress
 
 class DrawLabel(bpy.types.Operator):
     bl_idname = "machin3.draw_label"
-    bl_label = "MACHIN3: draw_label"
+    bl_label = "MACHIN3: Draw Label"
     bl_description = ""
     bl_options = {'INTERNAL'}
 
@@ -73,7 +73,7 @@ class DrawLabel(bpy.types.Operator):
 
 class DrawLabels(bpy.types.Operator):
     bl_idname = "machin3.draw_labels"
-    bl_label = "MACHIN3: draw_labels"
+    bl_label = "MACHIN3: Draw Labels"
     bl_description = ""
     bl_options = {'INTERNAL'}
 
