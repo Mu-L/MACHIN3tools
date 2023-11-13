@@ -662,7 +662,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             row = draw_split_row(self, column, prop='modal_hud_scale', label='HUD Scale', factor=factor)
 
             if getattr(bpy.types, "MACHIN3_OT_mirror", False):
-                draw_split_row(self, row, prop='mirror_flick_distance', label='Mirror Flick distance Scale', factor=factor)
+                draw_split_row(self, row, prop='mirror_flick_distance', label='Mirror Flick Distance', factor=factor)
 
             if any([getattr(bpy.types, f'MACHIN3_{name}', False) for name in is_fading]):
                 column = bb.column()
