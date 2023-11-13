@@ -50,7 +50,6 @@ def draw_slide_status(op):
 
     return draw
 
-
 class SmartVert(bpy.types.Operator):
     bl_idname = "machin3.smart_vert"
     bl_label = "MACHIN3: Smart Vert"
