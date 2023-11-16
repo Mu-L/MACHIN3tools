@@ -753,7 +753,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
                 draw_split_row(self, column, prop='hide_wire_objects_when_assembling_instance_collection', label='Hide Wire Objects when assemgling Instance Collection')
 
                 if getattr(bpy.types, "MACHIN3_MT_modes_pie", False):
-                    draw_split_row(self, column, prop='show_instance_collection_assembly_in_modes_pie', label='Show Instance Colection Assembly in Modes Pie')
+                    draw_split_row(self, column, prop='show_instance_collection_assembly_in_modes_pie', label='Show Instance Collection Assembly in Modes Pie')
 
                 if getattr(bpy.types, "MACHIN3_MT_save_pie", False):
                     draw_split_row(self, column, prop='show_assembly_asset_creation_in_save_pie', label='Show Assembly Asset Creation in Save Pie')
