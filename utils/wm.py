@@ -220,6 +220,10 @@ def get_last_operators(context, debug=False):
             label = f"{label} {op.properties.get('name')}"
             prop = 'Store' if op.properties.get('store') else 'Recall'
 
+        elif idname == 'machin3.override_decal_materials':
+            undo = getattr(op, 'undo')
+            label = "Undo Material Override" if undo else "Material Override"
+
 
         # MESHmachine
 
