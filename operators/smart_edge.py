@@ -419,15 +419,22 @@ class SmartEdge(bpy.types.Operator):
         for e in edges:
             e.smooth = True
 
-        # if at least one of the verts doesn't have at least 2 conencted edges use bevel!
-        if any(count < 2 for count in connected_edge_counts):
-            bpy.ops.mesh.bevel('INVOKE_DEFAULT', segments=2, profile=1)
+        bpy.ops.mesh.bevel('INVOKE_DEFAULT', segments=2, profile=1)
 
-        # other wise use edge offset slide
-        else:
-            bpy.ops.mesh.offset_edge_loops_slide('INVOKE_DEFAULT',
-                                                 MESH_OT_offset_edge_loops={"use_cap_endpoint": False},
-                                                 TRANSFORM_OT_edge_slide={"value": -1, "use_even": True, "flipped": False, "use_clamp": True, "correct_uv": True})
+        # NOTE: why make this distinction and use the macro for single edge selections? I don't remember
+        # ####: it seems like it causes an issue when undoing, as it leaves geo unless you redo twice
+        # ####: seems like the bevel op works universaly better now? keeps UVs, and is better to handle too
+
+        # # if at least one of the verts doesn't have at least 2 conencted edges use bevel!
+        # if any(count < 2 for count in connected_edge_counts):
+        #     bpy.ops.mesh.bevel('INVOKE_DEFAULT', segments=2, profile=1)
+        #
+        # # other wise use edge offset slide
+        # else:
+        #     bpy.ops.mesh.offset_edge_loops_slide('INVOKE_DEFAULT',
+        #                                          MESH_OT_offset_edge_loops={"use_cap_endpoint": False},
+        #                                          TRANSFORM_OT_edge_slide={"value": -1, "use_even": True, "flipped": False, "use_clamp": True, "correct_uv": True})
+
         bmesh.update_edit_mesh(active.data)
 
 
