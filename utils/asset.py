@@ -41,7 +41,10 @@ def get_asset_ids(context):
     else:
         active = context.active_file
 
-    return active, active.id_type, active.local_id
+    if active:
+        return active, active.id_type, active.local_id
+
+    return None, None, None
 
 
 # CATALOGS

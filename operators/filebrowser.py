@@ -31,46 +31,49 @@ class Open(bpy.types.Operator):
 
         active, id_type, local_id = get_asset_ids(context)
 
-        if self.blend_file:
-            if active_file.asset_data:
+        if active:
 
-                if not get_asset_ids(context)[2]:
-                    bpy.ops.asset.open_containing_blend_file()
+            if self.blend_file:
+                if active_file.asset_data:
+
+                    if not local_id]:
+                        bpy.ops.asset.open_containing_blend_file()
+
+                    else:
+
+
+                        area = get_3dview_area(context)
+
+                        if area:
+                            region, region_data = get_window_region_from_area(area)
+                            print(area, region, region_data)
+
+                            with context.temp_override(area=area, region=region, region_data=region_data):
+                                scale = context.preferences.system.ui_scale * get_prefs().modal_hud_scale
+                                coords = (context.region.width / 2, 100 * scale)
+                                bpy.ops.machin3.draw_label(text="The blend file containing this asset is already open.", coords=coords, color=red, alpha=1, time=5)
+
 
                 else:
-
-
-                    area = get_3dview_area(context)
-
-                    if area:
-                        region, region_data = get_window_region_from_area(area)
-                        print(area, region, region_data)
-
-                        with context.temp_override(area=area, region=region, region_data=region_data):
-                            scale = context.preferences.system.ui_scale * get_prefs().modal_hud_scale
-                            coords = (context.region.width / 2, 100 * scale)
-                            bpy.ops.machin3.draw_label(text="The blend file containing this asset is already open.", coords=coords, color=red, alpha=1, time=5)
-
+                    path = os.path.join(directory, active_file.relative_path)
+                    bpy.ops.machin3.open_library_blend(blendpath=path)
 
             else:
-                path = os.path.join(directory, active_file.relative_path)
-                bpy.ops.machin3.open_library_blend(blendpath=path)
 
-        else:
+                # for the asset browser, fetch the library location via the custom get_asset_details_from_space() function
+                if active_file.asset_data:
+                    _, libpath, _, _ = get_asset_details_from_space(context, space, debug=False)
 
-            # for the asset browser, fetch the library location via the custom get_asset_details_from_space() function
-            if active_file.asset_data:
-                _, libpath, _, _ = get_asset_details_from_space(context, space, debug=False)
-
-                if libpath:
-                    open_folder(libpath)
+                    if libpath:
+                        open_folder(libpath)
 
 
-            # for the filebrowser, you can just fetch it from params.directory
-            else:
-                open_folder(directory)
+                # for the filebrowser, you can just fetch it from params.directory
+                else:
+                    open_folder(directory)
 
-        return {'FINISHED'}
+            return {'FINISHED'}
+        return {'CANCELLED'}
 
 
 class Toggle(bpy.types.Operator):
