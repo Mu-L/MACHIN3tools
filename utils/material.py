@@ -47,6 +47,14 @@ def adjust_bevel_shader(context, debug=False):
     debug = True
     debug = False
 
+    # global decalmachine
+    #
+    # if decalmachine is None:
+    #     decalmachine = get_addon('DECALmachine')[0]
+    #
+    # if decalmachine:
+    #     from DECALmachine.utils.material import get_decalgroup_from_decalmat
+
     m3 = context.scene.M3
 
     if debug:
@@ -153,7 +161,7 @@ def adjust_bevel_shader(context, debug=False):
         math2 = tree.nodes.get('Bevel Shader Radius Math2')
         global_radius = tree.nodes.get('Bevel Shader Global Radius')
         obj_modulation = tree.nodes.get('Bevel Shader Object Radius Modulation')
-        dim_modulation = tree.nodes.get('Bevel Shader Dimensions Modulation')
+        dim_modulation = tree.nodes.get('Bevel Shader Dimensions Radius Modulation')
 
         if debug:
             print(" bevel:", bevel)
@@ -175,6 +183,7 @@ def adjust_bevel_shader(context, debug=False):
                     print("  found last node", last_node.name)
 
                 normal_input = last_node.inputs.get('Normal')
+                coat_normal_input = last_node.inputs.get('Coat Normal')
 
                 if normal_input and not normal_input.links:
                     if debug:
@@ -190,8 +199,12 @@ def adjust_bevel_shader(context, debug=False):
 
                     bevel.location.y = last_node.location.y - y_dim + bevel.height
 
-                    # link it to the normal output
+                    # link it to the normal input
                     tree.links.new(bevel.outputs[0], normal_input)
+
+                    # link it to the coat normal input too
+                    if coat_normal_input and not coat_normal_input.links:
+                        tree.links.new(bevel.outputs[0], coat_normal_input)
 
                     # create first math node
                     if not math:
@@ -213,7 +226,7 @@ def adjust_bevel_shader(context, debug=False):
                             print("   creating 2nd multiply node")
 
                         math2 = tree.nodes.new('ShaderNodeMath')
-                        math2.name = "Bevel Shader Radius Math"
+                        math2.name = "Bevel Shader Radius Math2"
                         math2.operation = 'MULTIPLY'
 
                         math2.location = math.location
@@ -323,6 +336,12 @@ def adjust_bevel_shader(context, debug=False):
                         print(" removing math node")
 
                     tree.nodes.remove(math)
+
+                if math2:
+                    if debug:
+                        print(" removing math2 node")
+
+                    tree.nodes.remove(math2)
 
                 if global_radius:
                     if debug:
