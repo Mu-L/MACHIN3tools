@@ -36,7 +36,7 @@ class Open(bpy.types.Operator):
             if self.blend_file:
                 if active_file.asset_data:
 
-                    if not local_id]:
+                    if not local_id:
                         bpy.ops.asset.open_containing_blend_file()
 
                     else:
