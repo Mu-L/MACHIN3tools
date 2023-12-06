@@ -1,7 +1,7 @@
 import bpy
 import os
 import shutil
-from .. utils.registration import get_prefs
+from .. utils.registration import get_prefs, get_addon
 from .. utils.system import makedir
 from .. utils.view import reset_viewport
 from .. utils.ui import kmi_to_string, get_keymap_item
@@ -54,18 +54,23 @@ class Customize(bpy.types.Operator):
 
         else:
 
-            # copy custom exrs, setup bookmarks and remove workspaces
+            # copy custom exrs, setup bookmarks and enable some native addons. and customize the workspace pie
             if event.alt:
                 self.worlds(context, resourcespath, datafilespath)
 
                 self.bookmarks(context)
 
-                self.adjust_workspaces(context)
-
-            # just duplicate the workspace
-            elif event.ctrl:
-                self.add_workspaces(context)
                 self.customize_workspace_pie(context)
+
+                self.enable_native_addons(context)
+
+            # remove and duplicate workspaces
+            elif event.ctrl:
+                # NOTE: I think both of these are completely broken in Blender 4.0
+
+                self.adjust_workspaces(context)  # remove workspaces
+
+                self.add_workspaces(context)
 
         return {'FINISHED'}
 
@@ -1239,6 +1244,9 @@ class Customize(bpy.types.Operator):
         reset_viewport(context, disable_toolbar=True)
         print(" Disabled Tool Bar")
 
+
+    # ALT MODE
+
     def worlds(self, context, resourcespath, datafilespath):
         print("\n» Adding Custom EXRs")
 
@@ -1277,6 +1285,67 @@ class Customize(bpy.types.Operator):
 
         with open(path, mode='w') as f:
             f.write('\n'.join(lines))
+
+    def customize_workspace_pie(self, context): 
+        print("\n» Customizing Workspace Pie")
+
+        p = get_prefs()
+
+        for piedir in ['left', 'right', 'bottom', 'top', 'top_left', 'top_right', 'bottom_left', 'bottom_right']:
+
+            if piedir == 'left':
+                setattr(p, f'pie_workspace_{piedir}_name', 'General')
+                setattr(p, f'pie_workspace_{piedir}_text', 'MACHNIN3')
+                setattr(p, f'pie_workspace_{piedir}_icon', 'VIEW3D')
+
+            elif piedir == 'right':
+                setattr(p, f'pie_workspace_{piedir}_name', 'Compositing')
+                setattr(p, f'pie_workspace_{piedir}_text', 'Compositing')
+                setattr(p, f'pie_workspace_{piedir}_icon', 'NODE_COMPOSITING')
+
+            elif piedir == 'bottom':
+                setattr(p, f'pie_workspace_{piedir}_name', 'Scripting')
+                setattr(p, f'pie_workspace_{piedir}_text', 'Scripting')
+                setattr(p, f'pie_workspace_{piedir}_icon', 'CONSOLE')
+
+            elif piedir == 'top':
+                setattr(p, f'pie_workspace_{piedir}_name', 'Material')
+                setattr(p, f'pie_workspace_{piedir}_text', 'Material')
+                setattr(p, f'pie_workspace_{piedir}_icon', 'MATERIAL_DATA')
+
+            elif piedir == 'top_left':
+                setattr(p, f'pie_workspace_{piedir}_name', 'UVs')
+                setattr(p, f'pie_workspace_{piedir}_text', 'UVs')
+                setattr(p, f'pie_workspace_{piedir}_icon', 'GROUP_UVS')
+
+            elif piedir == 'top_right':
+                setattr(p, f'pie_workspace_{piedir}_name', 'World')
+                setattr(p, f'pie_workspace_{piedir}_text', 'World')
+                setattr(p, f'pie_workspace_{piedir}_icon', 'WORLD')
+
+            else:
+                setattr(p, f'pie_workspace_{piedir}_name', '')
+                setattr(p, f'pie_workspace_{piedir}_text', '')
+                setattr(p, f'pie_workspace_{piedir}_icon', '')
+
+    def enable_native_addons(self, context):
+        print("enablling native addons")
+
+        addons = ['LoopTools',
+                  'Icon Viewer',
+                  'Node Wrangler',
+                  # 'Node Minimap',
+                  ]
+
+        for addon in addons:
+            enabled, name, _, _ = get_addon(addon)
+            print(addon, enabled, name)
+
+            if not enabled:
+                bpy.ops.preferences.addon_enable(module=name)
+
+
+    # CTRL MODE
 
     def adjust_workspaces(self, context):
         print("\n» Adjusting Workspaces")
@@ -1331,48 +1400,6 @@ class Customize(bpy.types.Operator):
 
             for name, ws in zip(names, bpy.data.workspaces[1:]):
                 ws.name = name
-
-    def customize_workspace_pie(self, context):
-        print("\n» Customizing Workspace Pie")
-
-        p = get_prefs()
-
-        for piedir in ['left', 'right', 'bottom', 'top', 'top_left', 'top_right', 'bottom_left', 'bottom_right']:
-
-            if piedir == 'left':
-                setattr(p, f'pie_workspace_{piedir}_name', 'General')
-                setattr(p, f'pie_workspace_{piedir}_text', 'MACHNIN3')
-                setattr(p, f'pie_workspace_{piedir}_icon', 'VIEW3D')
-
-            elif piedir == 'right':
-                setattr(p, f'pie_workspace_{piedir}_name', 'Compositing')
-                setattr(p, f'pie_workspace_{piedir}_text', 'Compositing')
-                setattr(p, f'pie_workspace_{piedir}_icon', 'NODE_COMPOSITING')
-
-            elif piedir == 'bottom':
-                setattr(p, f'pie_workspace_{piedir}_name', 'Scripting')
-                setattr(p, f'pie_workspace_{piedir}_text', 'Scripting')
-                setattr(p, f'pie_workspace_{piedir}_icon', 'CONSOLE')
-
-            elif piedir == 'top':
-                setattr(p, f'pie_workspace_{piedir}_name', 'Material')
-                setattr(p, f'pie_workspace_{piedir}_text', 'Material')
-                setattr(p, f'pie_workspace_{piedir}_icon', 'MATERIAL_DATA')
-
-            elif piedir == 'top_left':
-                setattr(p, f'pie_workspace_{piedir}_name', 'UVs')
-                setattr(p, f'pie_workspace_{piedir}_text', 'UVs')
-                setattr(p, f'pie_workspace_{piedir}_icon', 'GROUP_UVS')
-
-            elif piedir == 'top_right':
-                setattr(p, f'pie_workspace_{piedir}_name', 'World')
-                setattr(p, f'pie_workspace_{piedir}_text', 'World')
-                setattr(p, f'pie_workspace_{piedir}_icon', 'WORLD')
-
-            else:
-                setattr(p, f'pie_workspace_{piedir}_name', '')
-                setattr(p, f'pie_workspace_{piedir}_text', '')
-                setattr(p, f'pie_workspace_{piedir}_icon', '')
 
 
 class RestoreKeymaps(bpy.types.Operator):
