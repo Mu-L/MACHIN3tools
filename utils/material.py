@@ -54,7 +54,7 @@ def adjust_bevel_shader(context, debug=False):
         decalmachine = get_addon('DECALmachine')[0]
 
     if decalmachine:
-        from DECALmachine.utils.material import get_decalgroup_from_decalmat
+        from DECALmachine.utils.material import get_decalgroup_from_decalmat, get_trimsheetgroup_from_trimsheetmat
 
     m3 = context.scene.M3
 
@@ -210,7 +210,7 @@ def adjust_bevel_shader(context, debug=False):
 
                     # get trimsheetmat inputs
                     elif mat.DM.istrimsheetmat:
-                        normal_inputs = []
+                        normal_inputs = [last_node.inputs[name] for name in ['Normal', 'Coat Normal']]
 
                     # non-panel decals, ignore
                     else:
@@ -229,8 +229,13 @@ def adjust_bevel_shader(context, debug=False):
 
                     # for a newly created bevel mat, blender will return dimensions of 0 for the principled shader for some reason, so correct for that
                     y_dim = last_node.dimensions.y
+
                     if y_dim == 0:
                         y_dim = 660
+
+                    # move nodes down a little for trim sheet materials
+                    if decalmachine and mat.DM.istrimsheetmat:
+                        y_dim += 200
 
                     bevel.location.y = last_node.location.y - y_dim + bevel.height
 
@@ -397,12 +402,31 @@ def adjust_bevel_shader(context, debug=False):
 
                     tree.nodes.remove(dim_modulation)
 
-                if mat.DM.isdecalmat and mat.DM.decaltype == 'PANEL':
-                    detail_normal = tree.nodes.get('Detail Normal')
-                    dg = get_decalgroup_from_decalmat(mat)
+                if decalmachine and (mat.DM.isdecalmat or mat.DM.istrimsheetmat):
 
-                    if detail_normal and last_node:
-                        normal_inputs = [dg.inputs[f"{comp} Normal"] for comp in ['Material', 'Material 2', 'Subset']]
+                    # get decal group (for panel decals)
+                    if mat.DM.isdecalmat and mat.DM.decaltype == 'PANEL':
+                        detail_normal = tree.nodes.get('Detail Normal')
+                        dg = get_decalgroup_from_decalmat(mat)
 
-                        for i in normal_inputs:
-                            tree.links.new(detail_normal.outputs[0], i)
+                        if detail_normal and dg:
+                            normal_inputs = [dg.inputs[f"{comp} Normal"] for comp in ['Material', 'Material 2', 'Subset']]
+
+                            for i in normal_inputs:
+                                tree.links.new(detail_normal.outputs[0], i)
+
+                    # get trimsheet group for sheet mats
+                    elif mat.DM.istrimsheetmat:
+                        tiling_normal = tree.nodes.get('Tiling Normal')
+                        tsg = get_trimsheetgroup_from_trimsheetmat(mat)
+
+                        if tiling_normal and tsg:
+                            normal_inputs = [tsg.inputs[name] for name in ['Normal']]
+
+                            for i in normal_inputs:
+                                tree.links.new(tiling_normal.outputs[0], i)
+
+                    # ignore non-panel decals
+                    else:
+                        continue
+
