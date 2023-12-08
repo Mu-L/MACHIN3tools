@@ -101,7 +101,7 @@ def adjust_bevel_shader(context, debug=False):
             obj.data.materials.append(white_bevel)
             mats.append(white_bevel)
 
-        if obj.data.materials[0] == white_bevel:
+        if obj.data.materials and obj.data.materials[0] == white_bevel:
             white_bevel_objs.append(obj)
         
         # collect all visible materials in a set
@@ -356,7 +356,9 @@ def adjust_bevel_shader(context, debug=False):
                 
                 for obj in white_bevel_objs:
                     obj.data.materials.clear()
-                    print("  clearing material slots on", obj.name)
+
+                    if debug:
+                        print("  clearing material slots on", obj.name)
 
             else:
                 if bevel:
