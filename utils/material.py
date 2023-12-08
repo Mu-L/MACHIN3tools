@@ -1,4 +1,5 @@
 import bpy
+from bpy.types import ThemeDopeSheet
 from mathutils import Vector
 from . registration import get_addon
 from . math import get_sca_matrix
@@ -47,13 +48,13 @@ def adjust_bevel_shader(context, debug=False):
     debug = True
     debug = False
 
-    # global decalmachine
-    #
-    # if decalmachine is None:
-    #     decalmachine = get_addon('DECALmachine')[0]
-    #
-    # if decalmachine:
-    #     from DECALmachine.utils.material import get_decalgroup_from_decalmat
+    global decalmachine
+
+    if decalmachine is None:
+        decalmachine = get_addon('DECALmachine')[0]
+
+    if decalmachine:
+        from DECALmachine.utils.material import get_decalgroup_from_decalmat
 
     m3 = context.scene.M3
 
@@ -109,18 +110,30 @@ def adjust_bevel_shader(context, debug=False):
         # set dimensions prop
         if m3.use_bevel_shader:
 
+            # for panel decal objects, ensure the radius mod is the same as the parent object's
+            if decalmachine and obj.DM.decaltype == 'PANEL' and obj.parent:
+                obj.M3.avoid_update = True
+                obj.M3.bevel_shader_radius_mod = obj.parent.M3.bevel_shader_radius_mod
+
             # set dimensions factor based on max dim
             if m3.bevel_shader_use_dimensions:
 
-                # get dimensions from non-evaluated mesh(as mirror mods massivele change the dims!)
-                if obj.type == 'MESH':
-                    # print(obj.name)
+                # for panel decals use the parent object's dimensions
+                if decalmachine and obj.DM.decaltype == 'PANEL' and obj.parent:
+                    dimobj = obj.parent
 
+                else:
+                    dimobj = obj
+
+                # get dimensions from non-evaluated mesh(as mirror mods massivele change the dims!)
+                if dimobj.type == 'MESH':
+                    # print(obj.name)
+                    
                     # get mesh dimensios as vector
-                    dims = Vector(get_bbox(obj.data)[2])
+                    dims = Vector(get_bbox(dimobj.data)[2])
 
                     # get scalemx
-                    scalemx = get_sca_matrix(obj.matrix_world.to_scale())
+                    scalemx = get_sca_matrix(dimobj.matrix_world.to_scale())
                     
                     # get the maxdims by getting the length of the scalemx @ dis vector
                     maxdim = (scalemx @ dims).length
@@ -128,7 +141,7 @@ def adjust_bevel_shader(context, debug=False):
                 
                 # fall back to obj.dims for non-mesh objects
                 else:
-                    maxdim = max(obj.dimensions)
+                    maxdim = max(dimobj.dimensions)
 
                 if debug:
                     print(" setting bevel dimensions to:", maxdim)
@@ -152,6 +165,7 @@ def adjust_bevel_shader(context, debug=False):
 
     for mat in visible_mats:
         if debug:
+            print()
             print(mat.name)
 
         tree = mat.node_tree
@@ -174,7 +188,8 @@ def adjust_bevel_shader(context, debug=False):
         # try to create bevel node
         if not bevel:
             if debug:
-                print("\n no bevel node found")
+                print()
+                print(" no bevel node found")
 
             last_node = get_last_node(mat)
 
@@ -182,10 +197,30 @@ def adjust_bevel_shader(context, debug=False):
                 if debug:
                     print("  found last node", last_node.name)
 
-                normal_input = last_node.inputs.get('Normal')
-                coat_normal_input = last_node.inputs.get('Coat Normal')
+                # BSDF
+                if last_node.type == 'BSDF_PRINCIPLED':
+                    normal_inputs = [last_node.inputs[name] for name in ['Normal', 'Coat Normal'] if not last_node.inputs[name].links]
 
-                if normal_input and not normal_input.links:
+                # decal or trim sheet mats
+                elif decalmachine and (mat.DM.isdecalmat or mat.DM.istrimsheetmat):
+
+                    # get decalmat inputs
+                    if mat.DM.isdecalmat and mat.DM.decaltype == 'PANEL':
+                        normal_inputs = [last_node.inputs[f"{comp} {name}"] for name in ['Normal', 'Coat Normal'] for comp in ['Material', 'Material 2', 'Subset']]
+
+                    # get trimsheetmat inputs
+                    elif mat.DM.istrimsheetmat:
+                        normal_inputs = []
+
+                    # non-panel decals, ignore
+                    else:
+                        continue
+
+                # fallback to any other node or node group
+                else:
+                    normal_inputs = [last_node.inputs[name] for name in ['Normal', 'Coat Normal'] if last_node.inputs.get(name) and not last_node.inputs[name].links]
+
+                if normal_inputs:
                     if debug:
                         print("   has a normal input without links, creating bevel node")
 
@@ -199,12 +234,9 @@ def adjust_bevel_shader(context, debug=False):
 
                     bevel.location.y = last_node.location.y - y_dim + bevel.height
 
-                    # link it to the normal input
-                    tree.links.new(bevel.outputs[0], normal_input)
-
-                    # link it to the coat normal input too
-                    if coat_normal_input and not coat_normal_input.links:
-                        tree.links.new(bevel.outputs[0], coat_normal_input)
+                    # link it to the normal inputs
+                    for i in normal_inputs:
+                        tree.links.new(bevel.outputs[0], i)
 
                     # create first math node
                     if not math:
@@ -312,7 +344,9 @@ def adjust_bevel_shader(context, debug=False):
                 # then set it on the global radius value node
                 global_radius.outputs[0].default_value = m3.bevel_shader_radius
 
-        # remove bevel nodes and white bevel mat
+
+        # REMOVE BEVEL NODE and WHITE BEVEL MAT mat
+
         else:
             if mat == white_bevel:
                 if debug:
@@ -361,4 +395,12 @@ def adjust_bevel_shader(context, debug=False):
 
                     tree.nodes.remove(dim_modulation)
 
+                if mat.DM.isdecalmat and mat.DM.decaltype == 'PANEL':
+                    detail_normal = tree.nodes.get('Detail Normal')
+                    dg = get_decalgroup_from_decalmat(mat)
 
+                    if detail_normal and last_node:
+                        normal_inputs = [dg.inputs[f"{comp} Normal"] for comp in ['Material', 'Material 2', 'Subset']]
+
+                        for i in normal_inputs:
+                            tree.links.new(detail_normal.outputs[0], i)

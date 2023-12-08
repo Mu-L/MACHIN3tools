@@ -18,14 +18,15 @@ from .. utils.light import get_area_light_poll
 
 # TODO: modes gpencil: add modal shrinkwrap tool, if gpencil is parented
 
+wavefront_addon = None
 
-decalmachine = None
+batchops = None
 boxcutter = None
 hardops = None
+
+decalmachine = None
 hypercursor = None
 hypercursorlast = None
-
-wavefront_addon = None
 
 
 # MODES
@@ -948,6 +949,11 @@ class PieShading(Menu):
     bl_label = "Shading and Overlays"
 
     def draw(self, context):
+        global decalmachine
+
+        if decalmachine is None:
+            decalmachine = get_addon('DECALmachine')[0]
+
         layout = self.layout
 
         view = context.space_data
@@ -1005,7 +1011,7 @@ class PieShading(Menu):
                 self.draw_eevee_box(context, view, b)
 
             elif view.shading.type == 'RENDERED' and context.scene.render.engine == 'CYCLES':
-                self.draw_cycles_box(context, view, b)
+                self.draw_cycles_box(context, view, b, decalmachine)
 
             if get_prefs().activate_render and get_prefs().render_adjust_lights_on_render and get_area_light_poll():
                 self.draw_light_adjust_box(context, m3, b)
@@ -1562,7 +1568,7 @@ class PieShading(Menu):
             if context.scene.eevee.use_volumetric_shadows:
                 row.prop(context.scene.eevee, "volumetric_shadow_samples", text='Samples')
 
-    def draw_cycles_box(self, context, view, layout):
+    def draw_cycles_box(self, context, view, layout, decalmachine):
         cycles = context.scene.cycles
         column = layout.column(align=True)
 
@@ -1634,9 +1640,27 @@ class PieShading(Menu):
 
             if active:
                 row = column.row(align=True)
-                row.active = m3.use_bevel_shader
-                row.prop(active.M3, 'bevel_shader_radius_mod', text="Active Object Factor")
 
+                # don't expose the active object's radius modulation for panel decals, as they get will use the dimensions and radius_mod of the parent object
+                if decalmachine and active.DM.isdecal:
+                    if active.parent:
+                        if active.DM.decaltype == 'PANEL':
+                            row.label(text="Bevel Radius of Panel Decals is modulated via the parent object!", icon='INFO')
+                        else:
+                            row.label(text="Bevel Shader on non-panel decals is not (yet?) supported!", icon='INFO')
+
+                            row = column.row(align=True)
+                            row.label(text='', icon='BLANK1')
+                            row.label(text="Do you really need this? Email me, if so: decal@machin3.io")
+
+                    else:
+                        row.label(text="Bevel Shader on decals without parent objects is not supported.", icon='INFO')
+
+                # in all other cases, expose the value to tweak the bevel radius on a per-object level
+                else:
+                    row = column.row(align=True)
+                    row.active = m3.use_bevel_shader
+                    row.prop(active.M3, 'bevel_shader_radius_mod', text="Active Object Factor")
 
     def draw_light_adjust_box(self, context, m3, layout):
         column = layout.column(align=True)
@@ -2576,11 +2600,16 @@ class PieCollections(Menu):
     bl_label = "Collections"
 
     def draw(self, context):
+        global batchops, decalmachine
+
         sel = context.selected_objects
         active = context.active_object
 
-        batchops, _, _, _ = get_addon("Batch Operations™")
-        decalmachine, _, _, _ = get_addon("DECALmachine")
+        if batchops is None:
+            batchops = get_addon("Batch Operations™")[0]
+        
+        if decalmachine is None:
+            decalmachine = get_addon("DECALmachine")[0]
 
         if sel:
             collections = list(set(col for obj in sel for col in obj.users_collection if not (decalmachine and (col.DM.isdecaltypecol or col.DM.isdecalparentcol))))[:10]

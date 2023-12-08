@@ -5,12 +5,15 @@ import bmesh
 from . utils.math import flatten_matrix
 from . utils.world import get_world_output
 from . utils.system import abspath
-from . utils.registration import get_prefs, get_addon_prefs
+from . utils.registration import get_addon, get_prefs, get_addon_prefs
 from . utils.tools import get_active_tool
 from . utils.light import adjust_lights_for_rendering, get_area_light_poll
 from . utils.view import sync_light_visibility
 from . utils.material import adjust_bevel_shader
 from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items, driver_space_items, bc_orientation_items, shading_light_items, compositor_items
+
+
+decalmachine = None
 
 
 # COLLECTIONS
@@ -602,7 +605,26 @@ class M3ObjectProperties(bpy.types.PropertyGroup):
 
     # bevel shader
 
-    bevel_shader_radius_mod: FloatProperty(name="Active Object Bevel Radius Modulation", description="Factor to modulate the Bevel Shader Radius on the Active Object", default=1, min=0, precision=2, step=0.1)
+    def update_bevel_shader_radius_mod(self, context):
+        if self.avoid_update:
+            self.avoid_update = False
+            return
+
+        global decalmachine
+
+        if decalmachine is None:
+            decalmachine = get_addon('DECALmachine')[0]
+
+        if decalmachine:
+            obj = self.id_data
+
+            panel_children = [obj for obj in obj.children if obj.DM.decaltype == 'PANEL']
+
+            for c in panel_children:
+                c.M3.avoid_update = True
+                c.M3.bevel_shader_radius_mod = obj.M3.bevel_shader_radius_mod
+
+    bevel_shader_radius_mod: FloatProperty(name="Active Object Bevel Radius Modulation", description="Factor to modulate the Bevel Shader Radius on the Active Object", default=1, min=0, precision=2, step=0.1, update=update_bevel_shader_radius_mod)
     bevel_shader_dimensions_mod: FloatProperty(name="Active Object Bevel Radius Modulation", description="Factor to modulate the Bevel Shader Radius on the Active Object", default=1, min=0, precision=2, step=0.1)
 
 
