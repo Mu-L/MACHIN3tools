@@ -28,6 +28,8 @@ def lighten_color(color, amount):
     return tuple(remap(c, amount) for c in color)
 
 
+# BEVEL SHADER
+
 def adjust_bevel_shader(context, debug=False):
     '''
     go over all visible objects, to find all materials used by them
@@ -53,8 +55,11 @@ def adjust_bevel_shader(context, debug=False):
     if decalmachine is None:
         decalmachine = get_addon('DECALmachine')[0]
 
+    # import DM dg and tsg fetch functions
     if decalmachine:
         from DECALmachine.utils.material import get_decalgroup_from_decalmat, get_trimsheetgroup_from_trimsheetmat
+    else:
+        get_decalgroup_from_decalmat = get_trimsheetgroup_from_trimsheetmat = None
 
     m3 = context.scene.M3
 
@@ -170,12 +175,12 @@ def adjust_bevel_shader(context, debug=False):
 
         tree = mat.node_tree
 
-        bevel = tree.nodes.get('Bevel')
-        math = tree.nodes.get('Bevel Shader Radius Math')
-        math2 = tree.nodes.get('Bevel Shader Radius Math2')
-        global_radius = tree.nodes.get('Bevel Shader Global Radius')
-        obj_modulation = tree.nodes.get('Bevel Shader Object Radius Modulation')
-        dim_modulation = tree.nodes.get('Bevel Shader Dimensions Radius Modulation')
+        bevel = tree.nodes.get('MACHIN3tools Bevel')
+        math = tree.nodes.get('MACHIN3tools Bevel Shader Radius Math')
+        math2 = tree.nodes.get('MACHIN3tools Bevel Shader Radius Math2')
+        global_radius = tree.nodes.get('MACHIN3tools Bevel Shader Global Radius')
+        obj_modulation = tree.nodes.get('MACHIN3tools Bevel Shader Object Radius Modulation')
+        dim_modulation = tree.nodes.get('MACHIN3tools Bevel Shader Dimensions Radius Modulation')
 
         if debug:
             print(" bevel:", bevel)
@@ -224,101 +229,10 @@ def adjust_bevel_shader(context, debug=False):
                     if debug:
                         print("   has a normal input without links, creating bevel node")
 
-                    bevel = tree.nodes.new('ShaderNodeBevel')
-                    bevel.location.x = last_node.location.x - 250
 
-                    # for a newly created bevel mat, blender will return dimensions of 0 for the principled shader for some reason, so correct for that
-                    y_dim = last_node.dimensions.y
+                    # CREATE BEVEL NODE SETUP, return bevel and global_radius nodes
 
-                    if y_dim == 0:
-                        y_dim = 660
-
-                    # move nodes down a little for trim sheet materials
-                    if decalmachine and mat.DM.istrimsheetmat:
-                        y_dim += 200
-
-                    bevel.location.y = last_node.location.y - y_dim + bevel.height
-
-                    # link it to the normal inputs
-                    for i in normal_inputs:
-                        tree.links.new(bevel.outputs[0], i)
-
-                    # create first math node
-                    if not math:
-                        if debug:
-                            print("   creating multiply node")
-
-                        math = tree.nodes.new('ShaderNodeMath')
-                        math.name = "Bevel Shader Radius Math"
-                        math.operation = 'MULTIPLY'
-
-                        math.location = bevel.location
-                        math.location.x = bevel.location.x - 200
-
-                        tree.links.new(math.outputs[0], bevel.inputs[0])
-
-                    # create second math node
-                    if not math2:
-                        if debug:
-                            print("   creating 2nd multiply node")
-
-                        math2 = tree.nodes.new('ShaderNodeMath')
-                        math2.name = "Bevel Shader Radius Math2"
-                        math2.operation = 'MULTIPLY'
-
-                        math2.location = math.location
-                        math2.location.x = math.location.x - 200
-
-                        tree.links.new(math2.outputs[0], math.inputs[0])
-
-                    # create global radius value node
-                    if not global_radius:
-                        if debug:
-                            print("   creating global radius node")
-
-                        global_radius = tree.nodes.new('ShaderNodeValue')
-                        global_radius.name = "Bevel Shader Global Radius"
-                        global_radius.label = "Global Radius"
-
-                        global_radius.location = math2.location
-                        global_radius.location.x = math2.location.x - 200
-                        global_radius.location.y = math2.location.y
-
-                        tree.links.new(global_radius.outputs[0], math2.inputs[0])
-                    
-                    # create per-object radius modulation node
-                    if not obj_modulation:
-                        if debug:
-                            print("   creating obj modulation node")
-
-                        obj_modulation = tree.nodes.new('ShaderNodeAttribute')
-                        obj_modulation.name = "Bevel Shader Object Radius Modulation"
-                        obj_modulation.label = "Obj Radius Modulation"
-
-                        obj_modulation.attribute_type = 'OBJECT'
-                        obj_modulation.attribute_name = 'M3.bevel_shader_radius_mod'
-
-                        obj_modulation.location = global_radius.location
-                        obj_modulation.location.y = global_radius.location.y - 100
-
-                        tree.links.new(obj_modulation.outputs[2], math2.inputs[1])
-
-                    # create obj-dimensions radius modulation node
-                    if not dim_modulation:
-                        if debug:
-                            print("   creating dimensions modulation node")
-
-                        dim_modulation = tree.nodes.new('ShaderNodeAttribute')
-                        dim_modulation.name = "Bevel Shader Dimensions Radius Modulation"
-                        dim_modulation.label = "Dimensions Radius Modulation"
-
-                        dim_modulation.attribute_type = 'OBJECT'
-                        dim_modulation.attribute_name = 'M3.bevel_shader_dimensions_mod'
-
-                        dim_modulation.location = math2.location
-                        dim_modulation.location.y = math2.location.y - 175
-
-                        tree.links.new(dim_modulation.outputs[2], math.inputs[1])
+                    bevel, global_radius = create_and_connect_bevel_shader_setup(mat, last_node, normal_inputs, math, math2, global_radius, obj_modulation, dim_modulation, decalmachine=decalmachine, debug=debug)
 
                 # couldn't find a normal input, moving on to the next material
                 else:
@@ -353,6 +267,9 @@ def adjust_bevel_shader(context, debug=False):
         # REMOVE BEVEL NODE and WHITE BEVEL MAT mat
 
         else:
+
+            # REMOVE WHITE BEVEL MATERIAL
+
             if mat == white_bevel:
                 if debug:
                     print(" removing white bevel material")
@@ -365,68 +282,192 @@ def adjust_bevel_shader(context, debug=False):
                     if debug:
                         print("  clearing material slots on", obj.name)
 
+
+            # REMOVE BEVEL NODE SETUP
+
             else:
-                if bevel:
-                    if debug:
-                        print(" removing bevel node")
+                remove_bevel_shader_setup(mat, bevel, math, math2, global_radius, obj_modulation, dim_modulation, decalmachine, get_decalgroup_from_decalmat, get_trimsheetgroup_from_trimsheetmat, debug)
 
-                    tree.nodes.remove(bevel)
 
-                if math:
-                    if debug:
-                        print(" removing math node")
+def create_and_connect_bevel_shader_setup(mat, last_node, normal_inputs, math=None, math2=None, global_radius=None, obj_modulation=None, dim_modulation=None, decalmachine=False, debug=False):
+    '''
+    create the complete MACHIN3tools bevel shader setup
+        create any nodes that aren't passed in
+        and connect them to each other
+    return bevel and global_radius nodes
+    '''
 
-                    tree.nodes.remove(math)
+    tree = mat.node_tree
+    
+    bevel = tree.nodes.new('ShaderNodeBevel')
+    bevel.name = "MACHIN3tools Bevel"
+    bevel.location.x = last_node.location.x - 250
 
-                if math2:
-                    if debug:
-                        print(" removing math2 node")
+    # for a newly created bevel mat, blender will return dimensions of 0 for the principled shader for some reason, so correct for that
+    y_dim = last_node.dimensions.y
 
-                    tree.nodes.remove(math2)
+    if y_dim == 0:
+        y_dim = 660
 
-                if global_radius:
-                    if debug:
-                        print(" removing global radius node")
+    # move nodes down a little for trim sheet materials
+    if decalmachine and mat.DM.istrimsheetmat:
+        y_dim += 200
 
-                    tree.nodes.remove(global_radius)
+    bevel.location.y = last_node.location.y - y_dim + bevel.height
 
-                if obj_modulation:
-                    if debug:
-                        print(" removing obj modulation node")
+    # link it to the normal inputs
+    for i in normal_inputs:
+        tree.links.new(bevel.outputs[0], i)
 
-                    tree.nodes.remove(obj_modulation)
+    # create first math node
+    if not math:
+        if debug:
+            print("   creating multiply node")
 
-                if dim_modulation:
-                    if debug:
-                        print(" removing dim modulation node")
+        math = tree.nodes.new('ShaderNodeMath')
+        math.name = "MACHIN3tools Bevel Shader Radius Math"
+        math.operation = 'MULTIPLY'
 
-                    tree.nodes.remove(dim_modulation)
+        math.location = bevel.location
+        math.location.x = bevel.location.x - 200
 
-                if decalmachine and (mat.DM.isdecalmat or mat.DM.istrimsheetmat):
+        tree.links.new(math.outputs[0], bevel.inputs[0])
 
-                    # get decal group (for panel decals)
-                    if mat.DM.isdecalmat and mat.DM.decaltype == 'PANEL':
-                        detail_normal = tree.nodes.get('Detail Normal')
-                        dg = get_decalgroup_from_decalmat(mat)
+    # create second math node
+    if not math2:
+        if debug:
+            print("   creating 2nd multiply node")
 
-                        if detail_normal and dg:
-                            normal_inputs = [dg.inputs[f"{comp} Normal"] for comp in ['Material', 'Material 2', 'Subset']]
+        math2 = tree.nodes.new('ShaderNodeMath')
+        math2.name = "MACHIN3tools Bevel Shader Radius Math2"
+        math2.operation = 'MULTIPLY'
 
-                            for i in normal_inputs:
-                                tree.links.new(detail_normal.outputs[0], i)
+        math2.location = math.location
+        math2.location.x = math.location.x - 200
 
-                    # get trimsheet group for sheet mats
-                    elif mat.DM.istrimsheetmat:
-                        tiling_normal = tree.nodes.get('Tiling Normal')
-                        tsg = get_trimsheetgroup_from_trimsheetmat(mat)
+        tree.links.new(math2.outputs[0], math.inputs[0])
 
-                        if tiling_normal and tsg:
-                            normal_inputs = [tsg.inputs[name] for name in ['Normal']]
+    # create global radius value node
+    if not global_radius:
+        if debug:
+            print("   creating global radius node")
 
-                            for i in normal_inputs:
-                                tree.links.new(tiling_normal.outputs[0], i)
+        global_radius = tree.nodes.new('ShaderNodeValue')
+        global_radius.name = "MACHIN3tools Bevel Shader Global Radius"
+        global_radius.label = "Global Radius"
 
-                    # ignore non-panel decals
-                    else:
-                        continue
+        global_radius.location = math2.location
+        global_radius.location.x = math2.location.x - 200
+        global_radius.location.y = math2.location.y
 
+        tree.links.new(global_radius.outputs[0], math2.inputs[0])
+    
+    # create per-object radius modulation node
+    if not obj_modulation:
+        if debug:
+            print("   creating obj modulation node")
+
+        obj_modulation = tree.nodes.new('ShaderNodeAttribute')
+        obj_modulation.name = "MACHIN3tools Bevel Shader Object Radius Modulation"
+        obj_modulation.label = "Obj Radius Modulation"
+
+        obj_modulation.attribute_type = 'OBJECT'
+        obj_modulation.attribute_name = 'M3.bevel_shader_radius_mod'
+
+        obj_modulation.location = global_radius.location
+        obj_modulation.location.y = global_radius.location.y - 100
+
+        tree.links.new(obj_modulation.outputs[2], math2.inputs[1])
+
+    # create obj-dimensions radius modulation node
+    if not dim_modulation:
+        if debug:
+            print("   creating dimensions modulation node")
+
+        dim_modulation = tree.nodes.new('ShaderNodeAttribute')
+        dim_modulation.name = "MACHIN3tools Bevel Shader Dimensions Radius Modulation"
+        dim_modulation.label = "Dimensions Radius Modulation"
+
+        dim_modulation.attribute_type = 'OBJECT'
+        dim_modulation.attribute_name = 'M3.bevel_shader_dimensions_mod'
+
+        dim_modulation.location = math2.location
+        dim_modulation.location.y = math2.location.y - 175
+
+        tree.links.new(dim_modulation.outputs[2], math.inputs[1])
+
+    return bevel, global_radius
+
+
+def remove_bevel_shader_setup(mat, bevel=None, math=None, math2=None, global_radius=None, obj_modulation=None, dim_modulation=None, decalmachine=False, get_decalgroup_from_decalmat=None, get_trimsheetgroup_from_trimsheetmat=None, debug=False):
+    '''
+    remove all the passed in bevel shader nodes
+    for decals also re-connect the detail and tiling normal nodes
+    '''
+
+    tree = mat.node_tree
+
+    if bevel:
+        if debug:
+            print(" removing bevel node")
+
+        tree.nodes.remove(bevel)
+
+    if math:
+        if debug:
+            print(" removing math node")
+
+        tree.nodes.remove(math)
+
+    if math2:
+        if debug:
+            print(" removing math2 node")
+
+        tree.nodes.remove(math2)
+
+    if global_radius:
+        if debug:
+            print(" removing global radius node")
+
+        tree.nodes.remove(global_radius)
+
+    if obj_modulation:
+        if debug:
+            print(" removing obj modulation node")
+
+        tree.nodes.remove(obj_modulation)
+
+    if dim_modulation:
+        if debug:
+            print(" removing dim modulation node")
+
+        tree.nodes.remove(dim_modulation)
+
+    # for decals re-connect the detail or tiling normal nodes 
+    if decalmachine and (mat.DM.isdecalmat or mat.DM.istrimsheetmat):
+
+        # get decal group (for panel decals)
+        if mat.DM.isdecalmat and mat.DM.decaltype == 'PANEL':
+            detail_normal = tree.nodes.get('Detail Normal')
+            dg = get_decalgroup_from_decalmat(mat)
+
+            if detail_normal and dg:
+                normal_inputs = [dg.inputs[f"{comp} Normal"] for comp in ['Material', 'Material 2', 'Subset']]
+
+                for i in normal_inputs:
+                    tree.links.new(detail_normal.outputs[0], i)
+
+        # get trimsheet group for sheet mats
+        elif mat.DM.istrimsheetmat:
+            tiling_normal = tree.nodes.get('Tiling Normal')
+            tsg = get_trimsheetgroup_from_trimsheetmat(mat)
+
+            if tiling_normal and tsg:
+                normal_inputs = [tsg.inputs[name] for name in ['Normal']]
+
+                for i in normal_inputs:
+                    tree.links.new(tiling_normal.outputs[0], i)
+
+        # ignore non-panel decals (for now)
+        else:
+            pass
