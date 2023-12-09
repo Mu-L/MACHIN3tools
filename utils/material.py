@@ -47,8 +47,7 @@ def adjust_bevel_shader(context, debug=False):
             remove the bevel node in the current mat, if it exists
     '''
 
-    debug = True
-    debug = False
+    # debug = True
 
     global decalmachine
 
@@ -303,15 +302,19 @@ def create_and_connect_bevel_shader_setup(mat, last_node, normal_inputs, math=No
     bevel.name = "MACHIN3tools Bevel"
     bevel.location.x = last_node.location.x - 250
 
-    # for a newly created bevel mat, blender will return dimensions of 0 for the principled shader for some reason, so correct for that
+    # for a newly created bevel mat (but also in some other cases?), blender will return dimensions of 0 for the principled shader (or the decal node group) for some reason, so correct for that
     y_dim = last_node.dimensions.y
 
     if y_dim == 0:
         y_dim = 660
 
-    # move nodes down a little for trim sheet materials
-    if decalmachine and mat.DM.istrimsheetmat:
-        y_dim += 200
+        if decalmachine:
+            if mat.DM.isdecalmat:
+                if mat.DM.decaltype == 'PANEL':
+                    y_dim = 963
+
+            elif mat.DM.istrimsheetmat:
+                y_dim = 860
 
     bevel.location.y = last_node.location.y - y_dim + bevel.height
 
