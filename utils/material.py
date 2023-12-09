@@ -308,13 +308,18 @@ def create_and_connect_bevel_shader_setup(mat, last_node, normal_inputs, math=No
     if y_dim == 0:
         y_dim = 660
 
+        if 'trimsheet' in last_node.name:
+            print("hello", mat.name)
+
         if decalmachine:
             if mat.DM.isdecalmat:
                 if mat.DM.decaltype == 'PANEL':
                     y_dim = 963
 
-            elif mat.DM.istrimsheetmat:
-                y_dim = 860
+    # always push bevel node down a little for trimsheet mats, otherwise they overlap with texture nodes
+    if decalmachine and mat.DM.istrimsheetmat:
+        y_dim += 200
+
 
     bevel.location.y = last_node.location.y - y_dim + bevel.height
 
