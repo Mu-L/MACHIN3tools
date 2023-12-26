@@ -299,3 +299,31 @@ class RotateStudioLight(bpy.types.Operator):
                 light.matrix_world = rmx @ light.matrix_world
 
         return {'FINISHED'}
+
+
+class AddWorld(bpy.types.Operator):
+    bl_idname = "machin3.add_world"
+    bl_label = "MACHIN3: Add World"
+    bl_description = "description"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if context.scene:
+            return not context.scene.world
+
+    def execute(self, context):
+
+        # SET
+
+        if bpy.data.worlds:
+            context.scene.world = bpy.data.worlds[0]
+
+        # NEW
+
+        else:
+            world = bpy.data.worlds.new(name="World")
+            world.use_nodes = True
+            context.scene.world = world
+
+        return {'FINISHED'}

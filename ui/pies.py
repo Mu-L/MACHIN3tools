@@ -1284,6 +1284,9 @@ class PieShading(Menu):
             row.operator("machin3.shade", text="Flat", icon_value=get_icon('flat')).mode = 'FLAT'
 
     def draw_shade_box(self, context, view, layout):
+        scene = context.scene
+        m3 = scene.M3
+
         column = layout.column(align=True) 
 
         # SOLID
@@ -1294,8 +1297,7 @@ class PieShading(Menu):
             row = column.row(align=True)
             # row.scale_y = 1.5
             # row.prop(view.shading, "light", expand=True)
-            row.prop(context.scene.M3, "shading_light", expand=True)
-
+            row.prop(m3, "shading_light", expand=True)
 
             # studio / matcap selection
             if view.shading.light in ["STUDIO", "MATCAP"]:
@@ -1319,26 +1321,26 @@ class PieShading(Menu):
             # flat shadow settings
             elif view.shading.light == "FLAT":
 
-                if context.scene.M3.use_flat_shadows:
+                if m3.use_flat_shadows:
                     row = column.split(factor=0.6, align=True)
 
                     col = row.column(align=True)
                     r = col.row(align=True)
                     r.scale_y = 1.25
-                    r.prop(context.scene.M3, "use_flat_shadows")
+                    r.prop(m3, "use_flat_shadows")
 
                     c = col.column(align=True)
-                    c.active = context.scene.M3.use_flat_shadows
-                    c.prop(context.scene.display, "shadow_shift")
-                    c.prop(context.scene.display, "shadow_focus")
+                    c.active = m3.use_flat_shadows
+                    c.prop(scene.display, "shadow_shift")
+                    c.prop(scene.display, "shadow_focus")
 
                     r = row.row(align=True)
-                    r.prop(context.scene.display, "light_direction", text="")
+                    r.prop(scene.display, "light_direction", text="")
 
                 else:
                     row = column.row(align=True)
                     row.scale_y = 1.25
-                    row.prop(context.scene.M3, "use_flat_shadows")
+                    row.prop(m3, "use_flat_shadows")
 
 
             # color type
@@ -1382,7 +1384,7 @@ class PieShading(Menu):
                 row = column.split(factor=0.3, align=True)
                 row.scale_y = 1.2
                 row.label(text='Engine')
-                row.prop(context.scene.M3, 'render_engine', expand=True)
+                row.prop(m3, 'render_engine', expand=True)
                 column.separator()
 
 
@@ -1402,16 +1404,22 @@ class PieShading(Menu):
                 if studio_worlds:
                     if view.shading.type == 'MATERIAL':
                         row.prop(view.shading, "use_scene_world")
+
                     elif view.shading.type == 'RENDERED':
                         row.prop(view.shading, "use_scene_world_render")
 
+                    if scene.world:
+                        row.prop(scene, 'world', text='')
+
+                    else:
+                        row.operator("machin3.add_world", text=f"{'Set' if bpy.data.worlds else 'New'} World", icon='ADD')
 
                     # world hdri selection and manipulation
                     if (view.shading.type == 'MATERIAL' and not view.shading.use_scene_world) or (view.shading.type == 'RENDERED' and not view.shading.use_scene_world_render):
                         row = column.row(align=True)
                         row.template_icon_view(view.shading, "studio_light", scale=4, scale_popup=4)
 
-                        if (view.shading.type == 'MATERIAL' or (view.shading.type == 'RENDERED' and context.scene.render.engine == 'BLENDER_EEVEE')) and view.shading.studiolight_background_alpha:
+                        if (view.shading.type == 'MATERIAL' or (view.shading.type == 'RENDERED' and scene.render.engine == 'BLENDER_EEVEE')) and view.shading.studiolight_background_alpha:
                             row = column.split(factor=0.55, align=True)
                             r = row.row(align=True)
                             r.operator("machin3.rotate_studiolight", text='+180').angle = 180
@@ -1430,10 +1438,10 @@ class PieShading(Menu):
             # world background node props
 
             if not studio_worlds or (view.shading.type == 'MATERIAL' and view.shading.use_scene_world) or (view.shading.type == 'RENDERED' and view.shading.use_scene_world_render):
-                world = context.scene.world
+                world = scene.world
                 if world:
                     if world.use_nodes:
-                        tree = context.scene.world.node_tree
+                        tree = scene.world.node_tree
                         output = tree.nodes.get("World Output")
 
                         if output:
@@ -1462,10 +1470,10 @@ class PieShading(Menu):
                 else:
                     row = column.row(align=True)
 
-                row.prop(context.scene.render, 'film_transparent')
+                row.prop(scene.render, 'film_transparent')
 
                 if enforce_hide_render:
-                    row.prop(context.scene.M3, 'enforce_hide_render', text="Enforce hide_render")
+                    row.prop(m3, 'enforce_hide_render', text="Enforce hide_render")
 
     def draw_eevee_box(self, context, view, layout):
         column = layout.column(align=True)
