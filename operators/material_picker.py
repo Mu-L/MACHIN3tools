@@ -52,7 +52,6 @@ def draw_material_pick_status(op):
 
     return draw
 
-
 class MaterialPicker(bpy.types.Operator):
     bl_idname = "machin3.material_picker"
     bl_label = "MACHIN3: Material Picker"
