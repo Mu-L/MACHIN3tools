@@ -200,6 +200,8 @@ def get_selected_objects(context) -> list[bpy.types.Object]:
 def get_visible_objects(context, local_view=False) -> list[bpy.types.Object]:
     '''
     is this a safer way to fetch the visible objects, especially for use in handlers?
+
+    TODO: local_view support, but note that it wont work in a handler, as context.space_data won't exist
     '''
 
     view_layer = context.view_layer
