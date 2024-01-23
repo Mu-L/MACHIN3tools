@@ -1,3 +1,4 @@
+from typing import Union
 import bpy
 import bmesh
 from mathutils import Matrix, Vector
@@ -167,3 +168,42 @@ def set_obj_origin(obj, mx, bm=None, decalmachine=False, meshmachine=False):
 
 def get_eval_bbox(obj):
     return [Vector(co) for co in obj.bound_box]
+
+
+def get_active_object(context) -> Union[bpy.types.Object, None]:
+    '''
+    is this a safer way to fetch the active object, especially for use in handlers?
+
+    see https://blenderartists.org/t/hard-crash-with-archipack/1501772
+    but also avoid AttributeError: 'Context' object has no attribute 'active_object'
+    '''
+    
+    objects = getattr(context.view_layer, 'objects', None)
+
+    if objects:
+        return getattr(objects, 'active', None)
+
+
+def get_selected_objects(context) -> list[bpy.types.Object]:
+    '''
+    is this a safer way to fetch the selected objects, especially for use in handlers?
+    '''
+
+    objects = getattr(context.view_layer, 'objects', None)
+
+    if objects:
+        return getattr(objects, 'selected', [])
+
+    return []
+
+
+def get_visible_objects(context, local_view=False) -> list[bpy.types.Object]:
+    '''
+    is this a safer way to fetch the visible objects, especially for use in handlers?
+    '''
+
+    view_layer = context.view_layer
+    objects = getattr(view_layer, 'objects', [])
+
+    return [obj for obj in objects if obj.visible_get(view_layer=view_layer)]
+

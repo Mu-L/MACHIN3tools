@@ -8,6 +8,7 @@ from . utils.light import adjust_lights_for_rendering, get_area_light_poll
 from . utils.view import sync_light_visibility
 from . utils.system import get_temp_dir
 from . utils.workspace import get_3dview_area, get_3dview_space
+from . utils.object import get_active_object, get_selected_objects, get_visible_objects
 
 import time
 
@@ -25,12 +26,12 @@ decalmachine = None
 @persistent
 def update_msgbus(none):
     reload_msgbus()
+    print("hllo reloaded msgbus")
 
 
 @persistent
 def update_group(none):
     context = bpy.context
-
 
     # NOTE: check if you are in material or rendered view using the real time compositor
     # blender will crash then, when setting any of the group object props, see https://blenderartists.org/t/machin3tools/1135716/1164?u=machin3
@@ -49,9 +50,7 @@ def update_group(none):
 
         # only actually execute any of the group stuff, if there is a 3d view, since we know that already
         if context.mode == 'OBJECT':
-
-            # avoid AttributeError: 'Context' object has no attribute 'active_object'
-            active = context.active_object if getattr(context, 'active_object', None) and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
+            active = active if (active := get_active_object(context)) and active.M3.is_group_empty and active.select_get() else None
 
 
             # AUTO SELECT
@@ -70,9 +69,13 @@ def update_group(none):
 
             # HIDE / UNHIDE
 
-            if context.scene.M3.group_hide and getattr(context, 'visible_objects', None):
-                selected = [obj for obj in context.visible_objects if obj.M3.is_group_empty and obj.select_get()]
-                unselected = [obj for obj in context.visible_objects if obj.M3.is_group_empty and not obj.select_get()]
+            # if context.scene.M3.group_hide and getattr(context, 'visible_objects', None):
+                # selected = [obj for obj in context.visible_objects if obj.M3.is_group_empty and obj.select_get()]
+                # unselected = [obj for obj in context.visible_objects if obj.M3.is_group_empty and not obj.select_get()]
+
+            if (visible := get_visible_objects(context)) and context.scene.M3.group_hide:
+                selected = [obj for obj in visible if obj.M3.is_group_empty and obj.select_get()]
+                unselected = [obj for obj in visible if obj.M3.is_group_empty and not obj.select_get()]
 
                 if selected:
                     for group in selected:
@@ -104,22 +107,22 @@ def update_asset(none):
 
     if context.mode == 'OBJECT':
 
-        # avoid AttributeError: 'Context' object has no attribute 'active_object'
-        active = getattr(context, 'active_object', None)
+        if meshmachine or decalmachine:
+            operators = context.window_manager.operators
+            active = active if (active := get_active_object(bpy.context)) and active.type == 'EMPTY' and active.instance_collection and active.instance_type == 'COLLECTION' else None
 
-        operators = context.window_manager.operators
+            if active and operators:
+                lastop = operators[-1]
 
-        if operators:
-            lastop = operators[-1]
-
-            # unlink MESHmachine stashes and DECALmachine decal backups
-            if active and active.type == 'EMPTY' and active.instance_collection and active.instance_type == 'COLLECTION':
-                if (meshmachine or decalmachine) and lastop.bl_idname == 'OBJECT_OT_transform_to_mouse':
+                # unlink MESHmachine stashes and DECALmachine decal backups
+                if lastop.bl_idname == 'OBJECT_OT_transform_to_mouse':
                     # print("inserting an asset")
                     # start = time.time()
 
+                    visible = get_visible_objects(context)
+
                     # for obj in context.scene.objects:
-                    for obj in context.visible_objects:
+                    for obj in visible:
                         if meshmachine and obj.MM.isstashobj:
                             # print(" STASH!")
 
@@ -131,7 +134,7 @@ def update_asset(none):
                             # print(" DECAL BACKUP!")
 
                             for col in obj.users_collection:
-                                # print(f"  unlinking {obj.name} from {col.name}")
+                                print(f"  unlinking {obj.name} from {col.name}")
                                 col.objects.unlink(obj)
 
                     # print(f" MACHIN3tools asset drop check done, after {time.time() - start:.20f} seconds")
@@ -149,8 +152,9 @@ def axes_HUD(scene):
     if axesHUD and "RNA_HANDLE_REMOVED" in str(axesHUD):
         axesHUD = None
 
-    axes_objects = [obj for obj in getattr(bpy.context, 'visible_objects', []) if obj.M3.draw_axes]
-    active = getattr(bpy.context, 'active_object', None)
+    # axes_objects = [obj for obj in getattr(bpy.context, 'visible_objects', []) if obj.M3.draw_axes]
+    axes_objects = [obj for obj in get_visible_objects(bpy.context) if obj.M3.draw_axes]
+    active = get_active_object(bpy.context)
 
     if scene.M3.draw_active_axes and active and active not in axes_objects:
         axes_objects.append(active)
@@ -213,8 +217,7 @@ def surface_slide_HUD(scene):
     if surfaceslideHUD and "RNA_HANDLE_REMOVED" in str(surfaceslideHUD):
         surfaceslideHUD = None
 
-    # avoid AttributeError: 'Context' object has no attribute 'active_object'
-    active = getattr(bpy.context, 'active_object', None)
+    active = get_active_object(bpy.context)
 
     if active:
         surfaceslide = [mod for mod in active.modifiers if mod.type == 'SHRINKWRAP' and 'SurfaceSlide' in mod.name]
