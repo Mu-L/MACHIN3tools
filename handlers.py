@@ -26,7 +26,6 @@ decalmachine = None
 @persistent
 def update_msgbus(none):
     reload_msgbus()
-    print("hllo reloaded msgbus")
 
 
 @persistent
@@ -68,10 +67,6 @@ def update_group(none):
 
 
             # HIDE / UNHIDE
-
-            # if context.scene.M3.group_hide and getattr(context, 'visible_objects', None):
-                # selected = [obj for obj in context.visible_objects if obj.M3.is_group_empty and obj.select_get()]
-                # unselected = [obj for obj in context.visible_objects if obj.M3.is_group_empty and not obj.select_get()]
 
             if (visible := get_visible_objects(context)) and context.scene.M3.group_hide:
                 selected = [obj for obj in visible if obj.M3.is_group_empty and obj.select_get()]
