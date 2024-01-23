@@ -3,14 +3,14 @@ import os
 from bpy.app.handlers import persistent
 from . utils.draw import draw_axes_HUD, draw_focus_HUD, draw_surface_slide_HUD, draw_screen_cast_HUD
 from . utils.registration import get_prefs, reload_msgbus, get_addon
-from . utils.group import update_group_name, select_group_children
+from . utils.group import select_group_children
 from . utils.light import adjust_lights_for_rendering, get_area_light_poll
 from . utils.view import sync_light_visibility
 from . utils.system import get_temp_dir
 from . utils.workspace import get_3dview_area, get_3dview_space
-from . utils.object import get_active_object, get_selected_objects, get_visible_objects
+from . utils.object import get_active_object, get_visible_objects
 
-import time
+# import time
 
 
 axesHUD = None
