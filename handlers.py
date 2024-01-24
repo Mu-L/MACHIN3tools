@@ -8,7 +8,6 @@ from . utils.group import select_group_children
 from . utils.light import adjust_lights_for_rendering, get_area_light_poll
 from . utils.view import sync_light_visibility
 from . utils.system import get_temp_dir
-from . utils.workspace import get_3dview_area, get_3dview_space
 from . utils.object import get_active_object, get_visible_objects
 
 
@@ -149,75 +148,58 @@ def manage_screen_cast_HUD():
 def manage_group():
     context = bpy.context
 
-    # NOTE: check if you are in material or rendered view using the real time compositor
-    # blender will crash then, when setting any of the group object props, see https://blenderartists.org/t/machin3tools/1135716/1164?u=machin3
-    # this check, will simply not do any of the object changes when real time comp is detected in material or rendered shading
-    # TODO: verify it's still happening now in the timer
+    scene = getattr(bpy.context, 'scene', None)
 
-    # TODO: investiate if doing the object level changes works, when you do them via an operator called from the handler
-    # TODO: same for the join op context override crash reported by kushiro
-
-    area = get_3dview_area(context)
-
-    if area:
-        space = get_3dview_space(area)
-
-        if space:
-            if space.shading.type in ['MATERIAL', 'RENDERED'] and space.shading.use_compositor in ['CAMERA', 'ALWAYS']:
-                return
-
-        scene = getattr(bpy.context, 'scene', None)
-
-        # only actually execute any of the group stuff, if there is a 3d view, since we know that already
-        if scene and context.mode == 'OBJECT':
-            active = active if (active := get_active_object(context)) and active.M3.is_group_empty and active.select_get() else None
+    # only actually execute any of the group stuff, if there is a 3d view, since we know that already
+    if scene and context.mode == 'OBJECT':
+        active = active if (active := get_active_object(context)) and active.M3.is_group_empty and active.select_get() else None
 
 
-            # AUTO SELECT
+        # AUTO SELECT
 
-            if scene.M3.group_select and active:
-                # print(" auto-select")
-                select_group_children(context.view_layer, active, recursive=scene.M3.group_recursive_select)
-
-
-            # STORE USER-SET EMPTY SIZE
-
-            if active:
-                # print(" storing user-set empty size")
-                # without this you can't actually set a new empty size, because it would be immediately reset to the stored value, if group_hide is enabled
-                if round(active.empty_display_size, 4) != 0.0001 and active.empty_display_size != active.M3.group_size:
-                    active.M3.group_size = active.empty_display_size
+        if scene.M3.group_select and active:
+            # print(" auto-select")
+            select_group_children(context.view_layer, active, recursive=scene.M3.group_recursive_select)
 
 
-            # HIDE / UNHIDE
+        # STORE USER-SET EMPTY SIZE
 
-            if (visible := get_visible_objects(context)) and scene.M3.group_hide:
-                # print(" hide/unhide") 
+        if active:
+            # print(" storing user-set empty size")
+            # without this you can't actually set a new empty size, because it would be immediately reset to the stored value, if group_hide is enabled
+            if round(active.empty_display_size, 4) != 0.0001 and active.empty_display_size != active.M3.group_size:
+                active.M3.group_size = active.empty_display_size
 
-                selected = [obj for obj in visible if obj.M3.is_group_empty and obj.select_get()]
-                unselected = [obj for obj in visible if obj.M3.is_group_empty and not obj.select_get()]
 
-                # NOTE: not checking if these props are set already, will cause repeated handler calls, even now that things are executed in a timer
+        # HIDE / UNHIDE
 
-                if selected:
-                    for group in selected:
-                        if not group.show_name:
-                            group.show_name = True
+        if (visible := get_visible_objects(context)) and scene.M3.group_hide:
+            # print(" hide/unhide") 
 
-                        if group.empty_display_size != group.M3.group_size:
-                            group.empty_display_size = group.M3.group_size
+            selected = [obj for obj in visible if obj.M3.is_group_empty and obj.select_get()]
+            unselected = [obj for obj in visible if obj.M3.is_group_empty and not obj.select_get()]
 
-                if unselected:
-                    for group in unselected:
-                        if group.show_name:
-                            group.show_name = False
+            # NOTE: not checking if these props are set already, will cause repeated handler calls, even now that things are executed in a timer
 
-                        # store existing non-zero size
-                        if round(group.empty_display_size, 4) != 0.0001:
-                            group.M3.group_size = group.empty_display_size
-                            
-                            # then hide the empty, but making it tiny
-                            group.empty_display_size = 0.0001
+            if selected:
+                for group in selected:
+                    if not group.show_name:
+                        group.show_name = True
+
+                    if group.empty_display_size != group.M3.group_size:
+                        group.empty_display_size = group.M3.group_size
+
+            if unselected:
+                for group in unselected:
+                    if group.show_name:
+                        group.show_name = False
+
+                    # store existing non-zero size
+                    if round(group.empty_display_size, 4) != 0.0001:
+                        group.M3.group_size = group.empty_display_size
+                        
+                        # then hide the empty, but making it tiny
+                        group.empty_display_size = 0.0001
 
 
 # ASSET DROP
