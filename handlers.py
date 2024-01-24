@@ -23,47 +23,49 @@ prev_axes_objects = []
 def manage_axes_HUD():
     global axesHUD, prev_axes_objects
 
-    scene = bpy.context.scene
+    scene = getattr(bpy.context, 'scene', None)
 
-    # if you unregister the addon, the handle will somehow stay arround as a capsule object with the following name
-    # despite that, the object will return True, and so we need to check for this or no new handler will be created when re-registering
-    if axesHUD and "RNA_HANDLE_REMOVED" in str(axesHUD):
-        axesHUD = None
+    if scene:
 
-    # axes_objects = [obj for obj in getattr(bpy.context, 'visible_objects', []) if obj.M3.draw_axes]
-    axes_objects = [obj for obj in get_visible_objects(bpy.context) if obj.M3.draw_axes]
-    active = get_active_object(bpy.context)
+        # if you unregister the addon, the handle will somehow stay arround as a capsule object with the following name
+        # despite that, the object will return True, and so we need to check for this or no new handler will be created when re-registering
+        if axesHUD and "RNA_HANDLE_REMOVED" in str(axesHUD):
+            axesHUD = None
 
-    if scene.M3.draw_active_axes and active and active not in axes_objects:
-        axes_objects.append(active)
+        # axes_objects = [obj for obj in getattr(bpy.context, 'visible_objects', []) if obj.M3.draw_axes]
+        axes_objects = [obj for obj in get_visible_objects(bpy.context) if obj.M3.draw_axes]
+        active = get_active_object(bpy.context)
 
-    if scene.M3.draw_cursor_axes:
-        axes_objects.append('CURSOR')
+        if scene.M3.draw_active_axes and active and active not in axes_objects:
+            axes_objects.append(active)
 
-    # print()
+        if scene.M3.draw_cursor_axes:
+            axes_objects.append('CURSOR')
 
-    if axes_objects:
-        # print("axes objects present")
+        # print()
 
-        if axes_objects != prev_axes_objects:
-            # print(" axes objects changed")
-            prev_axes_objects = axes_objects
+        if axes_objects:
+            # print("axes objects present")
 
-            # the objects have changed, remove the previous handler if one exists
-            if axesHUD:
-                # print("  removing previous draw handler")
-                bpy.types.SpaceView3D.draw_handler_remove(axesHUD, 'WINDOW')
+            if axes_objects != prev_axes_objects:
+                # print(" axes objects changed")
+                prev_axes_objects = axes_objects
 
-            # create a new handler
-            # print("  adding new draw handler")
-            axesHUD = bpy.types.SpaceView3D.draw_handler_add(draw_axes_HUD, (bpy.context, axes_objects), 'WINDOW', 'POST_VIEW')
+                # the objects have changed, remove the previous handler if one exists
+                if axesHUD:
+                    # print("  removing previous draw handler")
+                    bpy.types.SpaceView3D.draw_handler_remove(axesHUD, 'WINDOW')
 
-    # remove the handler when no axes objects are present anymore
-    elif axesHUD:
-        bpy.types.SpaceView3D.draw_handler_remove(axesHUD, 'WINDOW')
-        # print("removing old draw handler")
-        axesHUD = None
-        prev_axes_objects = []
+                # create a new handler
+                # print("  adding new draw handler")
+                axesHUD = bpy.types.SpaceView3D.draw_handler_add(draw_axes_HUD, (bpy.context, axes_objects), 'WINDOW', 'POST_VIEW')
+
+        # remove the handler when no axes objects are present anymore
+        elif axesHUD:
+            bpy.types.SpaceView3D.draw_handler_remove(axesHUD, 'WINDOW')
+            # print("removing old draw handler")
+            axesHUD = None
+            prev_axes_objects = []
 
 
 # FOCUS HUD
@@ -73,22 +75,24 @@ focusHUD = None
 def manage_focus_HUD():
     global focusHUD
 
-    scene = bpy.context.scene
+    scene = getattr(bpy.context, 'scene', None)
 
-    # if you unregister the addon, the handle will somehow stay arround as a capsule object with the following name
-    # despite that, the object will return True, and so we need to check for this or no new handler will be created when re-registering
-    if focusHUD and "RNA_HANDLE_REMOVED" in str(focusHUD):
-        focusHUD = None
+    if scene:
 
-    history = scene.M3.focus_history
+        # if you unregister the addon, the handle will somehow stay arround as a capsule object with the following name
+        # despite that, the object will return True, and so we need to check for this or no new handler will be created when re-registering
+        if focusHUD and "RNA_HANDLE_REMOVED" in str(focusHUD):
+            focusHUD = None
 
-    if history:
-        if not focusHUD:
-            focusHUD = bpy.types.SpaceView3D.draw_handler_add(draw_focus_HUD, (bpy.context, (1, 1, 1), 1, 2), 'WINDOW', 'POST_PIXEL')
+        history = scene.M3.focus_history
 
-    elif focusHUD:
-        bpy.types.SpaceView3D.draw_handler_remove(focusHUD, 'WINDOW')
-        focusHUD = None
+        if history:
+            if not focusHUD:
+                focusHUD = bpy.types.SpaceView3D.draw_handler_add(draw_focus_HUD, (bpy.context, (1, 1, 1), 1, 2), 'WINDOW', 'POST_PIXEL')
+
+        elif focusHUD:
+            bpy.types.SpaceView3D.draw_handler_remove(focusHUD, 'WINDOW')
+            focusHUD = None
 
 
 # SURFACE SLIDE HUD
@@ -162,16 +166,18 @@ def manage_group():
             if space.shading.type in ['MATERIAL', 'RENDERED'] and space.shading.use_compositor in ['CAMERA', 'ALWAYS']:
                 return
 
+        scene = getattr(bpy.context, 'scene', None)
+
         # only actually execute any of the group stuff, if there is a 3d view, since we know that already
-        if context.mode == 'OBJECT':
+        if scene and context.mode == 'OBJECT':
             active = active if (active := get_active_object(context)) and active.M3.is_group_empty and active.select_get() else None
 
 
             # AUTO SELECT
 
-            if context.scene.M3.group_select and active:
+            if scene.M3.group_select and active:
                 # print(" auto-select")
-                select_group_children(context.view_layer, active, recursive=context.scene.M3.group_recursive_select)
+                select_group_children(context.view_layer, active, recursive=scene.M3.group_recursive_select)
 
 
             # STORE USER-SET EMPTY SIZE
@@ -185,7 +191,7 @@ def manage_group():
 
             # HIDE / UNHIDE
 
-            if (visible := get_visible_objects(context)) and context.scene.M3.group_hide:
+            if (visible := get_visible_objects(context)) and scene.M3.group_hide:
                 # print(" hide/unhide") 
 
                 selected = [obj for obj in visible if obj.M3.is_group_empty and obj.select_get()]
@@ -293,7 +299,6 @@ def manage_asset_drop_cleanup():
 # MANAGE LIGHTS
 
 def manage_lights_decrease_and_visibility_sync(scene):
-    scene = bpy.context.scene
     m3 = scene.M3
     p = get_prefs()
 
@@ -341,10 +346,12 @@ def pre_undo_save():
     debug = False
     debug = True
 
+    scene = getattr(bpy.context, 'scene', None)
+
     # PRE-UNDO SAVING
 
-    if get_prefs().save_pie_use_undo_save:
-        m3 = bpy.context.scene.M3
+    if scene and get_prefs().save_pie_use_undo_save:
+        m3 = scene.M3
 
         if m3.use_undo_save:
             global last_active_operator
