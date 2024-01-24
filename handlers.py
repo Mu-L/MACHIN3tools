@@ -1,6 +1,7 @@
 import bpy
 import os
 from bpy.app.handlers import persistent
+from functools import partial
 from . utils.draw import draw_axes_HUD, draw_focus_HUD, draw_surface_slide_HUD, draw_screen_cast_HUD
 from . utils.registration import get_prefs, reload_msgbus, get_addon
 from . utils.group import select_group_children
@@ -10,136 +11,16 @@ from . utils.system import get_temp_dir
 from . utils.workspace import get_3dview_area, get_3dview_space
 from . utils.object import get_active_object, get_visible_objects
 
-# import time
 
+
+# ------------ DEFERRED EXECUTION ---------------
+
+# AXES HUD
 
 axesHUD = None
 prev_axes_objects = []
-focusHUD = None
-surfaceslideHUD = None
-screencastHUD = None
 
-meshmachine = None
-decalmachine = None
-
-
-@persistent
-def update_msgbus(none):
-    reload_msgbus()
-
-
-@persistent
-def update_group(none):
-    context = bpy.context
-
-    # NOTE: check if you are in material or rendered view using the real time compositor
-    # blender will crash then, when setting any of the group object props, see https://blenderartists.org/t/machin3tools/1135716/1164?u=machin3
-    # this check, will simply not do any of the object changes when real time comp is detected in material or rendered shading
-    # TODO: investiate if doing the object level changes works, when you do them via an operator called from the handler
-    # TODO: same for the join op context override crash reported by kushiro
-
-    area = get_3dview_area(context)
-
-    if area:
-        space = get_3dview_space(area)
-
-        if space:
-            if space.shading.type in ['MATERIAL', 'RENDERED'] and space.shading.use_compositor in ['CAMERA', 'ALWAYS']:
-                return
-
-        # only actually execute any of the group stuff, if there is a 3d view, since we know that already
-        if context.mode == 'OBJECT':
-            active = active if (active := get_active_object(context)) and active.M3.is_group_empty and active.select_get() else None
-
-
-            # AUTO SELECT
-
-            if context.scene.M3.group_select and active:
-                select_group_children(context.view_layer, active, recursive=context.scene.M3.group_recursive_select)
-
-
-            # STORE USER-SET EMPTY SIZE
-
-            if active:
-                # without this you can't actually set a new empty size, because it would be immediately reset to the stored value, if group_hide is enabled
-                if round(active.empty_display_size, 4) != 0.0001 and active.empty_display_size != active.M3.group_size:
-                    active.M3.group_size = active.empty_display_size
-
-
-            # HIDE / UNHIDE
-
-            if (visible := get_visible_objects(context)) and context.scene.M3.group_hide:
-                selected = [obj for obj in visible if obj.M3.is_group_empty and obj.select_get()]
-                unselected = [obj for obj in visible if obj.M3.is_group_empty and not obj.select_get()]
-
-                if selected:
-                    for group in selected:
-                        group.show_name = True
-                        group.empty_display_size = group.M3.group_size
-
-                if unselected:
-                    for group in unselected:
-                        group.show_name = False
-
-                        # store existing non-zero size
-                        if round(group.empty_display_size, 4) != 0.0001:
-                            group.M3.group_size = group.empty_display_size
-
-                        group.empty_display_size = 0.0001
-
-
-@persistent
-def update_asset(none):
-    global meshmachine, decalmachine
-
-    if meshmachine is None:
-        meshmachine = get_addon('MESHmachine')[0]
-
-    if decalmachine is None:
-        decalmachine = get_addon('DECALmachine')[0]
-
-    context = bpy.context
-
-    if context.mode == 'OBJECT':
-
-        if meshmachine or decalmachine:
-            operators = context.window_manager.operators
-            active = active if (active := get_active_object(bpy.context)) and active.type == 'EMPTY' and active.instance_collection and active.instance_type == 'COLLECTION' else None
-
-            if active and operators:
-                lastop = operators[-1]
-
-                # unlink MESHmachine stashes and DECALmachine decal backups
-                if lastop.bl_idname == 'OBJECT_OT_transform_to_mouse':
-                    # print("inserting an asset")
-                    # start = time.time()
-
-                    visible = get_visible_objects(context)
-
-                    # for obj in context.scene.objects:
-                    for obj in visible:
-                        if meshmachine and obj.MM.isstashobj:
-                            # print(" STASH!")
-
-                            for col in obj.users_collection:
-                                # print(f"  unlinking {obj.name} from {col.name}")
-                                col.objects.unlink(obj)
-
-                        if decalmachine and obj.DM.isbackup:
-                            # print(" DECAL BACKUP!")
-
-                            for col in obj.users_collection:
-                                print(f"  unlinking {obj.name} from {col.name}")
-                                col.objects.unlink(obj)
-
-                    # print(f" MACHIN3tools asset drop check done, after {time.time() - start:.20f} seconds")
-
-            # if lastop.bl_idname == 'OBJECT_OT_drop_named_material':
-                # print("material dropped")
-
-
-@persistent
-def axes_HUD(scene):
+def manage_axes_HUD(scene):
     global axesHUD, prev_axes_objects
 
     # if you unregister the addon, the handle will somehow stay arround as a capsule object with the following name
@@ -183,8 +64,11 @@ def axes_HUD(scene):
         prev_axes_objects = []
 
 
-@persistent
-def focus_HUD(scene):
+# FOCUS HUD
+
+focusHUD = None
+
+def manage_focus_HUD(scene):
     global focusHUD
 
     # if you unregister the addon, the handle will somehow stay arround as a capsule object with the following name
@@ -203,8 +87,11 @@ def focus_HUD(scene):
         focusHUD = None
 
 
-@persistent
-def surface_slide_HUD(scene):
+# SURFACE SLIDE HUD
+
+surfaceslideHUD = None
+
+def manage_surface_slide_HUD():
     global surfaceslideHUD
 
     # if you unregister the addon, the handle will somehow stay arround as a capsule object with the following name
@@ -225,8 +112,11 @@ def surface_slide_HUD(scene):
             surfaceslideHUD = None
 
 
-@persistent
-def screencast_HUD(scene):
+# SCREEN CAST HUD
+
+screencastHUD = None
+
+def manage_screen_cast_HUD():
     global screencastHUD
 
     wm = bpy.context.window_manager
@@ -246,47 +136,193 @@ def screencast_HUD(scene):
         screencastHUD = None
 
 
-debug = False
-# debug = True
+# GROUP
+
+def manage_group():
+    context = bpy.context
+
+    # NOTE: check if you are in material or rendered view using the real time compositor
+    # blender will crash then, when setting any of the group object props, see https://blenderartists.org/t/machin3tools/1135716/1164?u=machin3
+    # this check, will simply not do any of the object changes when real time comp is detected in material or rendered shading
+    # TODO: verify it's still happening now in the timer
+
+    # TODO: investiate if doing the object level changes works, when you do them via an operator called from the handler
+    # TODO: same for the join op context override crash reported by kushiro
+
+    area = get_3dview_area(context)
+
+    if area:
+        space = get_3dview_space(area)
+
+        if space:
+            if space.shading.type in ['MATERIAL', 'RENDERED'] and space.shading.use_compositor in ['CAMERA', 'ALWAYS']:
+                return
+
+        # only actually execute any of the group stuff, if there is a 3d view, since we know that already
+        if context.mode == 'OBJECT':
+            active = active if (active := get_active_object(context)) and active.M3.is_group_empty and active.select_get() else None
 
 
-@persistent
-def decrease_lights_on_render_start(scene):
+            # AUTO SELECT
+
+            if context.scene.M3.group_select and active:
+                # print(" auto-select")
+                select_group_children(context.view_layer, active, recursive=context.scene.M3.group_recursive_select)
+
+
+            # STORE USER-SET EMPTY SIZE
+
+            if active:
+                # print(" storing user-set empty size")
+                # without this you can't actually set a new empty size, because it would be immediately reset to the stored value, if group_hide is enabled
+                if round(active.empty_display_size, 4) != 0.0001 and active.empty_display_size != active.M3.group_size:
+                    active.M3.group_size = active.empty_display_size
+
+
+            # HIDE / UNHIDE
+
+            if (visible := get_visible_objects(context)) and context.scene.M3.group_hide:
+                # print(" hide/unhide") 
+
+                selected = [obj for obj in visible if obj.M3.is_group_empty and obj.select_get()]
+                unselected = [obj for obj in visible if obj.M3.is_group_empty and not obj.select_get()]
+
+                # NOTE: not checking if these props are set already, will cause repeated handler calls, even now that things are executed in a timer
+
+                if selected:
+                    for group in selected:
+                        if not group.show_name:
+                            group.show_name = True
+
+                        if group.empty_display_size != group.M3.group_size:
+                            group.empty_display_size = group.M3.group_size
+
+                if unselected:
+                    for group in unselected:
+                        if group.show_name:
+                            group.show_name = False
+
+                        # store existing non-zero size
+                        if round(group.empty_display_size, 4) != 0.0001:
+                            group.M3.group_size = group.empty_display_size
+                            
+                            # then hide the empty, but making it tiny
+                            group.empty_display_size = 0.0001
+
+
+# ASSET DROP
+
+meshmachine = None
+decalmachine = None
+was_asset_drop_cleanup_executed = False
+
+def manage_asset_drop_cleanup():
+    '''
+    for some reason this particular function is reliably executed twice
+    and while it's generally not a problem, it really not necessary
+    so we ensure it's only execited every second time via was_asset_drop_cleanup_executed
+
+    NOTE: this may also be related to other handlers (perhaps in HC) causing a second run, so verify that's not the case
+    '''
+    
+    global was_asset_drop_cleanup_executed
+
+    if was_asset_drop_cleanup_executed:
+        was_asset_drop_cleanup_executed = False
+        return
+
+    # print(" asset drop cleanup")
+
+    global meshmachine, decalmachine
+
+    if meshmachine is None:
+        meshmachine = get_addon('MESHmachine')[0]
+
+    if decalmachine is None:
+        decalmachine = get_addon('DECALmachine')[0]
+
+    # print("  meshmachine:", meshmachine)
+    # print("  decalmachine:", decalmachine)
+
+    context = bpy.context
+
+    if context.mode == 'OBJECT':
+
+        if meshmachine or decalmachine:
+            operators = context.window_manager.operators
+            active = active if (active := get_active_object(bpy.context)) and active.type == 'EMPTY' and active.instance_collection and active.instance_type == 'COLLECTION' else None
+
+            if active and operators:
+                lastop = operators[-1]
+
+                # unlink MESHmachine stashes and DECALmachine decal backups
+                if lastop.bl_idname == 'OBJECT_OT_transform_to_mouse':
+                    # print()
+                    # print("  asset drop detected!")
+                    # start = time.time()
+
+                    visible = get_visible_objects(context)
+
+                    for obj in visible:
+                        if meshmachine and obj.MM.isstashobj:
+                            # print("   STASH!", obj.name)
+
+                            for col in obj.users_collection:
+                                # print(f"    unlinking {obj.name} from {col.name}")
+                                col.objects.unlink(obj)
+
+                        if decalmachine and obj.DM.isbackup:
+                            # print("   DECAL BACKUP!", obj.name)
+
+                            for col in obj.users_collection:
+                                # print(f"    unlinking {obj.name} from {col.name}")
+                                col.objects.unlink(obj)
+
+                    # print(f" MACHIN3tools asset drop check done, after {time.time() - start:.20f} seconds")
+
+            # if lastop.bl_idname == 'OBJECT_OT_drop_named_material':
+                # print("material dropped")
+
+    was_asset_drop_cleanup_executed = True
+
+
+# MANAGE LIGHTS
+
+def manage_lights_decrease_and_visibility_sync(scene):
     m3 = scene.M3
+    p = get_prefs()
 
-    if get_prefs().activate_render and get_prefs().activate_shading_pie and get_prefs().render_adjust_lights_on_render and get_area_light_poll() and m3.adjust_lights_on_render:
+    if p.activate_render and p.activate_shading_pie and p.render_adjust_lights_on_render and get_area_light_poll() and m3.adjust_lights_on_render:
         if scene.render.engine == 'CYCLES':
             last = m3.adjust_lights_on_render_last
             divider = m3.adjust_lights_on_render_divider
 
             # decrease on start of rendering
             if last in ['NONE', 'INCREASE'] and divider > 1:
-                if debug:
-                    print()
-                    print("decreasing lights for cycles when starting render")
+                # print()
+                # print("decreasing lights for cycles when starting render")
 
                 m3.adjust_lights_on_render_last = 'DECREASE'
                 m3.is_light_decreased_by_handler = True
 
                 adjust_lights_for_rendering(mode='DECREASE')
 
-    if get_prefs().activate_render and get_prefs().render_sync_light_visibility:
+    if p.activate_render and p.render_sync_light_visibility:
         sync_light_visibility(scene)
 
 
-@persistent
-def increase_lights_on_render_end(scene):
+def manage_lights_increase(scene):
     m3 = scene.M3
+    p = get_prefs()
 
-    if get_prefs().activate_render and get_prefs().activate_shading_pie and get_prefs().render_adjust_lights_on_render and get_area_light_poll() and m3.adjust_lights_on_render:
+    if p.activate_render and p.activate_shading_pie and p.render_adjust_lights_on_render and get_area_light_poll() and m3.adjust_lights_on_render:
         if scene.render.engine == 'CYCLES':
             last = m3.adjust_lights_on_render_last
 
             # increase again when finished
             if last == 'DECREASE' and m3.is_light_decreased_by_handler:
-                if debug:
-                    print()
-                    print("increasing lights for cycles when finshing/aborting render")
+                # print()
+                # print("increasing lights for cycles when finshing/aborting render")
 
                 m3.adjust_lights_on_render_last = 'INCREASE'
                 m3.is_light_decreased_by_handler = False
@@ -294,15 +330,16 @@ def increase_lights_on_render_end(scene):
                 adjust_lights_for_rendering(mode='INCREASE')
 
 
-last_active_operator = None
+# SAVE FILE before UNDO
 
-@persistent
-def undo_save(scene):
+def pre_undo_save():
     debug = False
     debug = True
 
+    # PRE-UNDO SAVING
+
     if get_prefs().save_pie_use_undo_save:
-        m3 = scene.M3
+        m3 = bpy.context.scene.M3
 
         if m3.use_undo_save:
             global last_active_operator
@@ -359,3 +396,80 @@ def undo_save(scene):
 
                     if debug:
                         print("time:", time() - start)
+
+
+# ----------------- HANDLERS --------------------
+
+# LOAD POST HANDLER
+
+@persistent
+def load_post(none):
+    reload_msgbus()
+
+
+# DEPSGRAPH UPDATE POST HANDLER
+
+@persistent
+def depsgraph_update_post(scene):
+    # print()
+    # print("dg update post handler")
+
+
+    # AXES HUD
+
+    bpy.app.timers.register(partial(manage_axes_HUD, scene), first_interval=0, persistent=False)
+
+
+    # FOCUS HUD
+
+    bpy.app.timers.register(partial(manage_focus_HUD, scene), first_interval=0, persistent=False)
+
+
+    # SURFACE SLIDE HUD
+
+    bpy.app.timers.register(manage_surface_slide_HUD, first_interval=0, persistent=False)
+
+
+    # SCREEN CAST HUD
+
+    bpy.app.timers.register(manage_screen_cast_HUD, first_interval=0, persistent=False)
+
+
+    # GROUP
+
+    bpy.app.timers.register(manage_group, first_interval=0, persistent=False)
+
+
+    # ASSET DROP CLEANUP
+
+    bpy.app.timers.register(manage_asset_drop_cleanup, first_interval=0, persistent=False)
+
+
+# RENDER INIT / CANCEL / COMPLETE HANDLERS
+
+@persistent
+def render_start(scene):
+
+    # LIGHT DESCREASE + VISIBILITY SYNC on RENDER START
+
+    bpy.app.timers.register(partial(manage_lights_decrease_and_visibility_sync, scene), first_interval=0, persistent=False)
+
+
+@persistent
+def render_end(scene):
+
+    # LIGHT INCREASE on RENDER CANCEL/COMPLETE
+
+    bpy.app.timers.register(partial(manage_lights_increase, scene), first_interval=0, persistent=False)
+
+
+# PRE-UNDO HANDLER
+
+last_active_operator = None
+
+@persistent
+def undo_pre(scene):
+
+    # PRE-UNDO SAVING
+
+    bpy.app.timers.register(pre_undo_save, first_interval=0, persistent=False)

@@ -85,7 +85,7 @@ from . properties import M3SceneProperties, M3ObjectProperties
 from . utils.registration import get_core, get_prefs, get_tools, get_pie_menus
 from . utils.registration import register_classes, unregister_classes, register_keymaps, unregister_keymaps, register_icons, unregister_icons, register_msgbus, unregister_msgbus
 from . ui.menus import object_context_menu, mesh_context_menu, add_object_buttons, material_pick_button, outliner_group_toggles, extrude_menu, group_origin_adjustment_toggle, render_menu, render_buttons
-from . handlers import focus_HUD, surface_slide_HUD, update_group, update_asset, update_msgbus, screencast_HUD, increase_lights_on_render_end, decrease_lights_on_render_start, axes_HUD, undo_save
+from . handlers import load_post, undo_pre, depsgraph_update_post, render_start, render_end
 
 
 def register():
@@ -140,20 +140,15 @@ def register():
 
     # HANDLERS
 
-    bpy.app.handlers.load_post.append(update_msgbus)
+    bpy.app.handlers.load_post.append(load_post)
+    bpy.app.handlers.depsgraph_update_post.append(depsgraph_update_post)
 
-    bpy.app.handlers.depsgraph_update_post.append(axes_HUD)
-    bpy.app.handlers.depsgraph_update_post.append(focus_HUD)
-    bpy.app.handlers.depsgraph_update_post.append(surface_slide_HUD)
-    bpy.app.handlers.depsgraph_update_post.append(update_group)
-    bpy.app.handlers.depsgraph_update_post.append(update_asset)
-    bpy.app.handlers.depsgraph_update_post.append(screencast_HUD)
+    bpy.app.handlers.render_init.append(render_start)
+    bpy.app.handlers.render_cancel.append(render_end)
+    bpy.app.handlers.render_complete.append(render_end)
 
-    bpy.app.handlers.render_init.append(decrease_lights_on_render_start)
-    bpy.app.handlers.render_cancel.append(increase_lights_on_render_end)
-    bpy.app.handlers.render_complete.append(increase_lights_on_render_end)
 
-    bpy.app.handlers.undo_pre.append(undo_save)
+    bpy.app.handlers.undo_pre.append(undo_pre)
 
 
     # REGISTRATION OUTPUT
@@ -170,7 +165,7 @@ def unregister():
 
     # HANDLERS
 
-    bpy.app.handlers.load_post.remove(update_msgbus)
+    bpy.app.handlers.load_post.remove(load_post)
 
     from . handlers import axesHUD, focusHUD, surfaceslideHUD, screencastHUD
 
@@ -186,18 +181,13 @@ def unregister():
     if screencastHUD and "RNA_HANDLE_REMOVED" not in str(screencastHUD):
         bpy.types.SpaceView3D.draw_handler_remove(screencastHUD, 'WINDOW')
 
-    bpy.app.handlers.depsgraph_update_post.remove(axes_HUD)
-    bpy.app.handlers.depsgraph_update_post.remove(focus_HUD)
-    bpy.app.handlers.depsgraph_update_post.remove(surface_slide_HUD)
-    bpy.app.handlers.depsgraph_update_post.remove(update_group)
-    bpy.app.handlers.depsgraph_update_post.remove(update_asset)
-    bpy.app.handlers.depsgraph_update_post.remove(screencast_HUD)
+    bpy.app.handlers.depsgraph_update_post.remove(depsgraph_update_post)
 
-    bpy.app.handlers.render_init.remove(decrease_lights_on_render_start)
-    bpy.app.handlers.render_cancel.remove(increase_lights_on_render_end)
-    bpy.app.handlers.render_complete.remove(increase_lights_on_render_end)
+    bpy.app.handlers.render_init.remove(render_start)
+    bpy.app.handlers.render_cancel.remove(render_end)
+    bpy.app.handlers.render_complete.remove(render_end)
 
-    bpy.app.handlers.undo_pre.remove(undo_save)
+    bpy.app.handlers.undo_pre.remove(undo_pre)
 
     # MSGBUS
 
