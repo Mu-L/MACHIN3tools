@@ -20,8 +20,10 @@ from . utils.object import get_active_object, get_visible_objects
 axesHUD = None
 prev_axes_objects = []
 
-def manage_axes_HUD(scene):
+def manage_axes_HUD():
     global axesHUD, prev_axes_objects
+
+    scene = bpy.context.scene
 
     # if you unregister the addon, the handle will somehow stay arround as a capsule object with the following name
     # despite that, the object will return True, and so we need to check for this or no new handler will be created when re-registering
@@ -68,8 +70,10 @@ def manage_axes_HUD(scene):
 
 focusHUD = None
 
-def manage_focus_HUD(scene):
+def manage_focus_HUD():
     global focusHUD
+
+    scene = bpy.context.scene
 
     # if you unregister the addon, the handle will somehow stay arround as a capsule object with the following name
     # despite that, the object will return True, and so we need to check for this or no new handler will be created when re-registering
@@ -289,6 +293,7 @@ def manage_asset_drop_cleanup():
 # MANAGE LIGHTS
 
 def manage_lights_decrease_and_visibility_sync(scene):
+    scene = bpy.context.scene
     m3 = scene.M3
     p = get_prefs()
 
@@ -417,12 +422,12 @@ def depsgraph_update_post(scene):
 
     # AXES HUD
 
-    bpy.app.timers.register(partial(manage_axes_HUD, scene), first_interval=0, persistent=False)
+    bpy.app.timers.register(manage_axes_HUD, first_interval=0, persistent=False)
 
 
     # FOCUS HUD
 
-    bpy.app.timers.register(partial(manage_focus_HUD, scene), first_interval=0, persistent=False)
+    bpy.app.timers.register(manage_focus_HUD, first_interval=0, persistent=False)
 
 
     # SURFACE SLIDE HUD

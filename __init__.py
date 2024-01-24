@@ -189,6 +189,7 @@ def unregister():
 
     bpy.app.handlers.undo_pre.remove(undo_pre)
 
+
     # MSGBUS
 
     unregister_msgbus(owner)
