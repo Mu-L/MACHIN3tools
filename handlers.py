@@ -1,14 +1,14 @@
 import bpy
 import os
 from bpy.app.handlers import persistent
-from functools import partial
+from . utils.application import delay_execution
 from . utils.draw import draw_axes_HUD, draw_focus_HUD, draw_surface_slide_HUD, draw_screen_cast_HUD
-from . utils.registration import get_prefs, reload_msgbus, get_addon
 from . utils.group import select_group_children
 from . utils.light import adjust_lights_for_rendering, get_area_light_poll
-from . utils.view import sync_light_visibility
-from . utils.system import get_temp_dir
 from . utils.object import get_active_object, get_visible_objects
+from . utils.registration import get_prefs, reload_msgbus, get_addon
+from . utils.system import get_temp_dir
+from . utils.view import sync_light_visibility
 
 
 
@@ -212,7 +212,7 @@ def manage_asset_drop_cleanup():
     '''
     for some reason this particular function is reliably executed twice
     and while it's generally not a problem, it really not necessary
-    so we ensure it's only execited every second time via was_asset_drop_cleanup_executed
+    so we ensure it's only executed every second time via was_asset_drop_cleanup_executed
 
     NOTE: this may also be related to other handlers (perhaps in HC) causing a second run, so verify that's not the case
     '''
@@ -272,54 +272,61 @@ def manage_asset_drop_cleanup():
 
                     # print(f" MACHIN3tools asset drop check done, after {time.time() - start:.20f} seconds")
 
+                was_asset_drop_cleanup_executed = True
+
             # if lastop.bl_idname == 'OBJECT_OT_drop_named_material':
                 # print("material dropped")
 
-    was_asset_drop_cleanup_executed = True
 
 
 # MANAGE LIGHTS
 
-def manage_lights_decrease_and_visibility_sync(scene):
-    m3 = scene.M3
-    p = get_prefs()
+def manage_lights_decrease_and_visibility_sync():
+    scene = getattr(bpy.context, 'scene', None)
 
-    if p.activate_render and p.activate_shading_pie and p.render_adjust_lights_on_render and get_area_light_poll() and m3.adjust_lights_on_render:
-        if scene.render.engine == 'CYCLES':
-            last = m3.adjust_lights_on_render_last
-            divider = m3.adjust_lights_on_render_divider
+    if scene:
+        m3 = scene.M3
+        p = get_prefs()
 
-            # decrease on start of rendering
-            if last in ['NONE', 'INCREASE'] and divider > 1:
-                # print()
-                # print("decreasing lights for cycles when starting render")
+        if p.activate_render and p.activate_shading_pie and p.render_adjust_lights_on_render and get_area_light_poll() and m3.adjust_lights_on_render:
+            if scene.render.engine == 'CYCLES':
+                last = m3.adjust_lights_on_render_last
+                divider = m3.adjust_lights_on_render_divider
 
-                m3.adjust_lights_on_render_last = 'DECREASE'
-                m3.is_light_decreased_by_handler = True
+                # decrease on start of rendering
+                if last in ['NONE', 'INCREASE'] and divider > 1:
+                    # print()
+                    # print("decreasing lights for cycles when starting render")
 
-                adjust_lights_for_rendering(mode='DECREASE')
+                    m3.adjust_lights_on_render_last = 'DECREASE'
+                    m3.is_light_decreased_by_handler = True
 
-    if p.activate_render and p.render_sync_light_visibility:
-        sync_light_visibility(scene)
+                    adjust_lights_for_rendering(mode='DECREASE')
+
+        if p.activate_render and p.render_sync_light_visibility:
+            sync_light_visibility(scene)
 
 
-def manage_lights_increase(scene):
-    m3 = scene.M3
-    p = get_prefs()
+def manage_lights_increase():
+    scene = getattr(bpy.context, 'scene', None)
 
-    if p.activate_render and p.activate_shading_pie and p.render_adjust_lights_on_render and get_area_light_poll() and m3.adjust_lights_on_render:
-        if scene.render.engine == 'CYCLES':
-            last = m3.adjust_lights_on_render_last
+    if scene:
+        m3 = scene.M3
+        p = get_prefs()
 
-            # increase again when finished
-            if last == 'DECREASE' and m3.is_light_decreased_by_handler:
-                # print()
-                # print("increasing lights for cycles when finshing/aborting render")
+        if p.activate_render and p.activate_shading_pie and p.render_adjust_lights_on_render and get_area_light_poll() and m3.adjust_lights_on_render:
+            if scene.render.engine == 'CYCLES':
+                last = m3.adjust_lights_on_render_last
 
-                m3.adjust_lights_on_render_last = 'INCREASE'
-                m3.is_light_decreased_by_handler = False
+                # increase again when finished
+                if last == 'DECREASE' and m3.is_light_decreased_by_handler:
+                    # print()
+                    # print("increasing lights for cycles when finshing/aborting render")
 
-                adjust_lights_for_rendering(mode='INCREASE')
+                    m3.adjust_lights_on_render_last = 'INCREASE'
+                    m3.is_light_decreased_by_handler = False
+
+                    adjust_lights_for_rendering(mode='INCREASE')
 
 
 # SAVE FILE before UNDO
@@ -411,32 +418,32 @@ def depsgraph_update_post(scene):
 
     # AXES HUD
 
-    bpy.app.timers.register(manage_axes_HUD, first_interval=0, persistent=False)
+    delay_execution(manage_axes_HUD)
 
 
     # FOCUS HUD
 
-    bpy.app.timers.register(manage_focus_HUD, first_interval=0, persistent=False)
+    delay_execution(manage_focus_HUD)
 
 
     # SURFACE SLIDE HUD
 
-    bpy.app.timers.register(manage_surface_slide_HUD, first_interval=0, persistent=False)
+    delay_execution(manage_surface_slide_HUD)
 
 
     # SCREEN CAST HUD
 
-    bpy.app.timers.register(manage_screen_cast_HUD, first_interval=0, persistent=False)
+    delay_execution(manage_screen_cast_HUD)
 
 
     # GROUP
 
-    bpy.app.timers.register(manage_group, first_interval=0, persistent=False)
+    delay_execution(manage_group)
 
 
     # ASSET DROP CLEANUP
 
-    bpy.app.timers.register(manage_asset_drop_cleanup, first_interval=0, persistent=False)
+    delay_execution(manage_asset_drop_cleanup)
 
 
 # RENDER INIT / CANCEL / COMPLETE HANDLERS
@@ -446,7 +453,7 @@ def render_start(scene):
 
     # LIGHT DESCREASE + VISIBILITY SYNC on RENDER START
 
-    bpy.app.timers.register(partial(manage_lights_decrease_and_visibility_sync, scene), first_interval=0, persistent=False)
+    delay_execution(manage_lights_decrease_and_visibility_sync)
 
 
 @persistent
@@ -454,7 +461,7 @@ def render_end(scene):
 
     # LIGHT INCREASE on RENDER CANCEL/COMPLETE
 
-    bpy.app.timers.register(partial(manage_lights_increase, scene), first_interval=0, persistent=False)
+    delay_execution(manage_lights_increase)
 
 
 # PRE-UNDO HANDLER
@@ -466,4 +473,4 @@ def undo_pre(scene):
 
     # PRE-UNDO SAVING
 
-    bpy.app.timers.register(pre_undo_save, first_interval=0, persistent=False)
+    delay_execution(pre_undo_save)
