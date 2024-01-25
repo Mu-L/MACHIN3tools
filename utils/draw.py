@@ -624,11 +624,18 @@ def draw_focus_HUD(context, color=(1, 1, 1), alpha=1, width=2):
     if context.space_data.overlay.show_overlays:
         region = context.region
         view = context.space_data
+        bprefs = context.preferences
 
         # only draw when actually in local view, this prevents it being drawn when switing workspace, which doesn't sync local view
         if view.local_view:
+            region_overlap = bprefs.system.use_region_overlap
+            header_alpha = bprefs.themes['Default'].view_3d.space.header[3]
 
-            # draw border
+            top_header = [r for r in context.area.regions if r.type == 'HEADER' and r.alignment == 'TOP']
+            top_tool_header = [r for r in context.area.regions if r.type == 'TOOL_HEADER' and r.alignment == 'TOP']
+
+
+            # BORDER
 
             coords = [(width, width), (region.width - width, width), (region.width - width, region.height - width), (width, region.height - width)]
             indices =[(0, 1), (1, 2), (2, 3), (3, 0)]
@@ -644,47 +651,64 @@ def draw_focus_HUD(context, color=(1, 1, 1), alpha=1, width=2):
             batch = batch_for_shader(shader, 'LINES', {"pos": coords}, indices=indices)
             batch.draw(shader)
 
-            # draw title
+
+            # TITLE
 
             scale = context.preferences.system.ui_scale * get_prefs().modal_hud_scale
-            offset = 4
 
-            # add additional offset if necessary
-            if require_header_offset(context, top=True):
-                offset += int(25)
+            offset_y = 5 * scale
 
-            title = "Focus Level: %d" % len(context.scene.M3.focus_history)
+            # with region_overlap enabled, add vertical offsets, depending on header and tool header positioning, as well as them header alpha
+            if region_overlap:
 
-            stashes = True if context.active_object and getattr(context.active_object, 'MM', False) and getattr(context.active_object.MM, 'stashes') else False
-            center = (region.width / 2) + (scale * 100) if stashes else region.width / 2
+                # the header also needs to take the them header alpha into account, at 1, it acts as if region_overlap is disabled, even when enabled
+                if top_header and header_alpha < 1:
+                    offset_y += top_header[0].height
+
+                # the tool header doesn't care about header alpha, and always should be offset when region alpha is enabled
+                # NOTE: unfortunately we have no way of finding out how wide the tool header is, bc for short ones, we actually should stop the vertical offset
+                if top_tool_header:
+                    offset_y += top_tool_header[0].height
+
+            text = "Focus Level: %d" % len(context.scene.M3.focus_history)
 
             font = 1
             fontsize = int(12 * scale)
 
-            dims = blf.dimensions(font, title)
+            dims = blf.dimensions(font, text)
 
             blf.size(font, fontsize)
             blf.color(font, *color, alpha)
-            blf.position(font, center - (dims[0] / 2), region.height - offset - fontsize, 0)
+            blf.position(font, (region.width / 2) - (blf.dimensions(font, text)[0] / 2), region.height - offset_y - fontsize, 0)
 
-            blf.draw(font, title)
+            blf.draw(font, text)
 
 
 def draw_surface_slide_HUD(context, color=(1, 1, 1), alpha=1, width=2):
     if context.space_data.overlay.show_overlays:
         region = context.region
+        bprefs = context.preferences
 
-        scale = context.preferences.system.ui_scale * get_prefs().modal_hud_scale
-        offset_y = 0
+        region_overlap = bprefs.system.use_region_overlap
+        header_alpha = bprefs.themes['Default'].view_3d.space.header[3]
 
         bottom_header = [r for r in context.area.regions if r.type == 'HEADER' and r.alignment == 'BOTTOM']
         bottom_tool_header = [r for r in context.area.regions if r.type == 'TOOL_HEADER' and r.alignment == 'BOTTOM']
 
-        if bottom_header:
-            offset_y += bottom_header[0].height
+        scale = context.preferences.system.ui_scale * get_prefs().modal_hud_scale
+        offset_y = 0
 
-        if bottom_tool_header:
-            offset_y += bottom_tool_header[0].height
+        # with region_overlap enabled, add vertical offsets, depending on header and tool header positioning, as well as them header alpha
+        if region_overlap:
+
+            # the header also needs to take the them header alpha into account, at 1, it acts as if region_overlap is disabled, even when enabled
+            if bottom_header and header_alpha < 1:
+                offset_y += bottom_header[0].height
+
+            # the tool header doesn't care about header alpha, and always should be offset when region alpha is enabled
+            # NOTE: unfortunately we have no way of finding out how wide the tool header is, bc for short ones, we actually should stop the vertical offset
+            if bottom_tool_header:
+                offset_y += bottom_tool_header[0].height
 
         text = "Surface Sliding"
 
@@ -701,6 +725,11 @@ def draw_surface_slide_HUD(context, color=(1, 1, 1), alpha=1, width=2):
 # SCREENCAST
 
 def draw_screen_cast_HUD(context):
+    bprefs = context.preferences
+
+    region_overlap = bprefs.system.use_region_overlap
+    header_alpha = bprefs.themes['Default'].view_3d.space.header[3]
+
     p = get_prefs()
     operators = get_last_operators(context, debug=False)[-p.screencast_operator_count:]
 
@@ -724,12 +753,12 @@ def draw_screen_cast_HUD(context):
     if redo:
         offset_y += redo[0].height
 
-    if bottom_header:
-        offset_y += bottom_header[0].height
+    if region_overlap:
+        if bottom_header and header_alpha < 1:
+            offset_y += bottom_header[0].height
 
-    if bottom_tool_header:
-        offset_y += bottom_tool_header[0].height
-
+        if bottom_tool_header:
+            offset_y += bottom_tool_header[0].height
 
     # emphasize the last op
     emphasize = 1.25
