@@ -675,21 +675,27 @@ def draw_surface_slide_HUD(context, color=(1, 1, 1), alpha=1, width=2):
         region = context.region
 
         scale = context.preferences.system.ui_scale * get_prefs().modal_hud_scale
-        offset = 0
+        offset_y = 0
 
-        if require_header_offset(context, top=False):
-            offset += int(20)
+        bottom_header = [r for r in context.area.regions if r.type == 'HEADER' and r.alignment == 'BOTTOM']
+        bottom_tool_header = [r for r in context.area.regions if r.type == 'TOOL_HEADER' and r.alignment == 'BOTTOM']
 
-        title = "Surface Sliding"
+        if bottom_header:
+            offset_y += bottom_header[0].height
+
+        if bottom_tool_header:
+            offset_y += bottom_tool_header[0].height
+
+        text = "Surface Sliding"
 
         font = 1
         fontsize = int(12 * scale)
 
         blf.size(font, fontsize)
         blf.color(font, *color, alpha)
-        blf.position(font, (region.width / 2) - int(60 * scale), 0 + offset + int(fontsize), 0)
+        blf.position(font, (region.width / 2) - (blf.dimensions(font, text)[0] / 2), 0 + offset_y + int(fontsize), 0)
 
-        blf.draw(font, title)
+        blf.draw(font, text)
 
 
 # SCREENCAST
