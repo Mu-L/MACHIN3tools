@@ -1,6 +1,5 @@
 import bpy
-from bpy.types import CompositorNodeAntiAliasing
-from bpy.utils import time_from_frame
+from .. utils.draw import draw_fading_label
 from .. utils.ui import get_mouse_pos, warp_mouse, get_window_space_co2d
 from .. utils.system import printd
 from .. utils.registration import get_prefs
@@ -556,11 +555,18 @@ class ToggleVIEW3DRegion(bpy.types.Operator):
 
                 # it's possible the region can't be toggled because there is not enough space, in which case the width will be 1
                 if region.width == 1:
-                    coords = (context.region.width / 2, 100 * scale)
-                    bpy.ops.machin3.draw_label(text="Can't Toggle the Sidebar", coords=coords, color=red, alpha=1, time=1.2)
 
-                    coords = (context.region.width / 2, (100 - 20) * scale)
-                    bpy.ops.machin3.draw_label(text="Insufficient view space", coords=coords, color=red, alpha=1, time=1.5)
+                    text = ["Can't toggle the Sidebar",
+                            "Insufficient View Space"]
+
+                    draw_fading_label(context, text=text, y=100, center=True, size=10, color=red, alpha=1, time=1.2, delay=0.3, cancel='')
+
+
+                    # coords = (context.region.width / 2, 100 * scale)
+                    # bpy.ops.machin3.draw_label(text="Can't Toggle the Sidebar", coords=coords, color=red, alpha=1, time=1.2)
+                    #
+                    # coords = (context.region.width / 2, (100 - 20) * scale)
+                    # bpy.ops.machin3.draw_label(text="Insufficient view space", coords=coords, color=red, alpha=1, time=1.5)
 
 
         # Redo Panel / Adjust Last Operation

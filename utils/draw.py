@@ -493,6 +493,44 @@ def draw_label(context, title='', coords=None, offset=0, center=True, size=12, c
     return blf.dimensions(font, title)
 
 
+def draw_fading_label(context, text='', x=None, y=100, gap=18, center=True, size=12, color=(1, 1, 1), alpha=1, time=5, delay=1, cancel=''):
+    '''
+    draw a fading label for time seconds, using the machin3.draw_decal_label() op
+
+    text takes a single string arg, or a list of multiple, where each new item becomes a new line
+        each additional line gets an additional second too
+
+    color can be a single color tuple, or a list or multiple, including less than there are text elements/lines
+        this allows you to pass in just two colors, to separate the head line from the main text
+        while actually drawing more than 2 lines in total
+
+    this approach is now very simple, using just this one function, and only requiring the single line drawing op
+    '''
+    
+    scale = context.preferences.system.ui_scale * get_prefs().modal_hud_scale
+
+    # without x being passed in, it's drawn in the center of the screen
+    if x is None:
+        x = (context.region.width / 2)
+
+    if isinstance(text, list):
+
+        # offset the coords up, so the y coord still determines the distance to the bottom of the view
+        coords = (x, y + gap * (len(text) - 1) * scale)
+
+        for idx, t in enumerate(text):
+            line_coords = (coords[0], coords[1] - (idx * gap * scale))
+            line_color = color if isinstance(color, tuple) else color[idx if idx < len(color) else len(color) - 1]
+
+            bpy.ops.machin3.draw_decal_label(text=t, coords=line_coords, center=center, color=line_color, alpha=alpha, time=time + idx * delay, cancel=cancel)
+
+    else:
+        coords = (x, y)
+
+        bpy.ops.machin3.draw_decal_label(text=text, coords=coords, center=center, color=color, alpha=alpha, time=time, cancel=cancel)
+
+
+
 # LAYOUT
 
 def draw_split_row(self, layout, prop='prop', text='', label='Label', factor=0.2, align=True, toggle=True, expand=True, info=None, warning=None):

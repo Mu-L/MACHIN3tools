@@ -4,6 +4,7 @@ import bmesh
 from mathutils.geometry import distance_point_to_plane
 from mathutils import Vector
 import math
+from .. utils.draw import draw_fading_label
 from .. utils.registration import get_prefs
 from .. items import cleanup_select_items
 from .. colors import white, green, red, yellow
@@ -135,23 +136,24 @@ class CleanUp(bpy.types.Operator):
                 edges += counts[1]
                 faces += counts[2]
 
-            text = f"Removed:{' Verts: ' + str(verts) if verts else ''}{' Edges: ' + str(edges) if edges else ''}{' Faces: ' + str(faces) if faces else ''}"
             extreme = any([c >= 10 for c in [verts, edges, faces]])
-            time = get_prefs().HUD_fade_clean_up
+            color = yellow if extreme else white
 
-            if is_any_non_manifold:
-                bpy.ops.machin3.draw_labels(text=text, text2="Non-Manifold Edges found!", coords=self.coords, center=False, color=yellow if extreme else white, color2=red, time=time, alpha=1)
-            else:
-                bpy.ops.machin3.draw_label(text=text, coords=self.coords, center=False, color=yellow if extreme else white, time=time, alpha=1)
+            text = [f"Removed:{' Verts: ' + str(verts) if verts else ''}{' Edges: ' + str(edges) if edges else ''}{' Faces: ' + str(faces) if faces else ''}"]
 
         else:
-            text = "Nothing to remove."
-            time = get_prefs().HUD_fade_clean_up
+            color = green
+            text = ["Nothing to remove."]
 
-            if is_any_non_manifold:
-                bpy.ops.machin3.draw_labels(text=text, text2="Non-Manifold Edges found!", coords=self.coords, center=False, color=green, color2=red, time=time, alpha=0.5)
-            else:
-                bpy.ops.machin3.draw_label(text=text, coords=self.coords, center=False, color=green, time=get_prefs().HUD_fade_clean_up, alpha=0.5)
+        time = get_prefs().HUD_fade_clean_up
+
+        if is_any_non_manifold:
+            text.append("Non-Manifold Edges found!")
+
+            draw_fading_label(context, text=text, x=self.coords[0], y=self.coords[1], center=False, size=12, color=[color, red], time=time, delay=time / 3, alpha=0.5)
+        else:
+
+            draw_fading_label(context, text=text[0], x=self.coords[0], y=self.coords[1], center=False, size=12, color=color, time=time, alpha=0.5)
 
 
         # self.report({'INFO'}, text)
