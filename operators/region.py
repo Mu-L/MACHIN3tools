@@ -531,6 +531,7 @@ class ToggleVIEW3DRegion(bpy.types.Operator):
         space = context.space_data
         region = regions[region_type] if region_type in regions else None
         screen_name = context.screen.name
+        region_overlap = context.preferences.system.use_region_overlap
 
         # get settings
         toggle_asset_shelf = get_prefs().region_toggle_assetshelf
@@ -554,19 +555,15 @@ class ToggleVIEW3DRegion(bpy.types.Operator):
             if region:
 
                 # it's possible the region can't be toggled because there is not enough space, in which case the width will be 1
-                if region.width == 1:
+                # however it behaves a little different depending on whether region_ovrlap is used or not
+                # NOTE: only with region_overlap disabled for instance dos show_region_ui read out properly, and only then is the width prop also responsive (readable)
+                if (region_overlap and region.width == 1) or (not region_overlap and space.show_region_ui and region.width == 1):
 
                     text = ["Can't toggle the Sidebar",
                             "Insufficient View Space"]
 
                     draw_fading_label(context, text=text, y=100, center=True, size=10, color=red, alpha=1, time=1.2, delay=0.3, cancel='')
 
-
-                    # coords = (context.region.width / 2, 100 * scale)
-                    # bpy.ops.machin3.draw_label(text="Can't Toggle the Sidebar", coords=coords, color=red, alpha=1, time=1.2)
-                    #
-                    # coords = (context.region.width / 2, (100 - 20) * scale)
-                    # bpy.ops.machin3.draw_label(text="Insufficient view space", coords=coords, color=red, alpha=1, time=1.5)
 
 
         # Redo Panel / Adjust Last Operation
