@@ -3,11 +3,10 @@ from mathutils import Vector, Matrix, Quaternion
 from math import sin, cos, pi
 import gpu
 from gpu_extras.batch import batch_for_shader
-from gpu_extras.presets import draw_circle_2d
 import blf
 from . wm import get_last_operators
 from . registration import get_prefs, get_addon
-from . ui import require_header_offset, get_zoom_factor
+from . ui import get_zoom_factor
 from . tools import get_active_tool
 from .. colors import red, green, blue, black, white
 
