@@ -12,7 +12,7 @@ from . utils.system import get_temp_dir
 from . utils.view import sync_light_visibility
 
 global_debug = False
-global_debug = True
+# global_debug = True
 
 
 # ------------ DEFERRED EXECUTION ---------------
