@@ -289,8 +289,7 @@ def manage_asset_drop_cleanup():
     debug = False
 
     if debug:
-        print("  asset drop management")
-
+        print("  M3 asset drop management")
 
     if was_asset_drop_cleanup_executed:
         if debug:
@@ -307,61 +306,79 @@ def manage_asset_drop_cleanup():
     if meshmachine is None:
         meshmachine = get_addon('MESHmachine')[0]
 
+        # check if the installed MESHmachine has the asset droper itself already
+        if meshmachine:
+            import MESHmachine
+
+            if 'manage_asset_drop_cleanup' in dir(MESHmachine.handlers):
+                meshmachine = False
+
+                if debug:
+                    print("    the installed MESHmachine already manages the asset drop itself, setting MM to False")
+
     if decalmachine is None:
         decalmachine = get_addon('DECALmachine')[0]
+
+        # check if the installed DECALmachine has the asset droper itself already
+        if decalmachine:
+            import DECALmachine
+
+            if 'manage_asset_drop_cleanup' in dir(DECALmachine.handlers):
+                decalmachine = False
+
+                if debug:
+                    print("    the installed DECALmachine already manages the asset drop itself, setting MM to False")
 
     if debug:
         print("    meshmachine:", meshmachine)
         print("    decalmachine:", decalmachine)
 
-    context = bpy.context
+    C = bpy.context
 
-    if context.mode == 'OBJECT':
+    if C.mode == 'OBJECT' and (meshmachine or decalmachine):
+        operators = C.window_manager.operators
+        active = active if (active := get_active_object(C)) and active.type == 'EMPTY' and active.instance_collection and active.instance_type == 'COLLECTION' else None
 
-        if meshmachine or decalmachine:
-            operators = context.window_manager.operators
-            active = active if (active := get_active_object(bpy.context)) and active.type == 'EMPTY' and active.instance_collection and active.instance_type == 'COLLECTION' else None
+        if active and operators:
+            lastop = operators[-1]
 
-            if active and operators:
-                lastop = operators[-1]
+            # unlink MESHmachine stashes and DECALmachine decal backups
+            if lastop.bl_idname == 'OBJECT_OT_transform_to_mouse':
+                if debug:
+                    print()
+                    print("    asset drop detected!")
 
-                # unlink MESHmachine stashes and DECALmachine decal backups
-                if lastop.bl_idname == 'OBJECT_OT_transform_to_mouse':
-                    if debug:
-                        print()
-                        print("    asset drop detected!")
+                # start = time.time()
 
-                    # start = time.time()
+                visible = get_visible_objects(C)
 
-                    visible = get_visible_objects(context)
+                for obj in visible:
+                    if meshmachine and obj.MM.isstashobj:
+                        if debug:
+                            print("     stash object:", obj.name)
 
-                    for obj in visible:
-                        if meshmachine and obj.MM.isstashobj:
+                        for col in obj.users_collection:
                             if debug:
-                                print("     stash object:", obj.name)
+                                print(f"      unlinking from {col.name}")
 
-                            for col in obj.users_collection:
-                                if debug:
-                                    print(f"      unlinking from {col.name}")
+                            col.objects.unlink(obj)
 
-                                col.objects.unlink(obj)
+                    if decalmachine and obj.DM.isbackup:
+                        if debug:
+                            print("     decal backup object:", obj.name)
 
-                        if decalmachine and obj.DM.isbackup:
+                        for col in obj.users_collection:
                             if debug:
-                                print("     decal backup object:", obj.name)
+                                print(f"      unlinking from {col.name}")
 
-                            for col in obj.users_collection:
-                                if debug:
-                                    print(f"      unlinking from {col.name}")
+                            col.objects.unlink(obj)
 
-                                col.objects.unlink(obj)
+                # print(f" MACHIN3tools asset drop check done, after {time.time() - start:.20f} seconds")
 
-                    # print(f" MACHIN3tools asset drop check done, after {time.time() - start:.20f} seconds")
+            was_asset_drop_cleanup_executed = True
 
-                was_asset_drop_cleanup_executed = True
-
-            # if lastop.bl_idname == 'OBJECT_OT_drop_named_material':
-                # print("material dropped")
+        # if lastop.bl_idname == 'OBJECT_OT_drop_named_material':
+            # print("material dropped")
 
 
 # MANAGE LIGHTS
@@ -513,6 +530,8 @@ def pre_undo_save():
 @persistent
 def load_post(none):
     global global_debug
+
+    # MSGBUS
 
     if global_debug:
         print()
