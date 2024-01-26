@@ -12,7 +12,7 @@ from . utils.system import get_temp_dir
 from . utils.view import sync_light_visibility
 
 global_debug = False
-# global_debug = True
+global_debug = True
 
 
 # ------------ DEFERRED EXECUTION ---------------
@@ -268,7 +268,7 @@ def manage_group():
                         group.empty_display_size = 0.0001
 
 
-# ASSET DROP
+# ASSET DROP CLEANUP
 
 meshmachine = None
 decalmachine = None
@@ -286,7 +286,7 @@ def manage_asset_drop_cleanup():
     global global_debug, was_asset_drop_cleanup_executed
 
     debug = global_debug
-    debug = False
+    # debug = False
 
     if debug:
         print("  M3 asset drop management")
@@ -327,7 +327,7 @@ def manage_asset_drop_cleanup():
                 decalmachine = False
 
                 if debug:
-                    print("    the installed DECALmachine already manages the asset drop itself, setting MM to False")
+                    print("    the installed DECALmachine already manages the asset drop itself, setting DM to False")
 
     if debug:
         print("    meshmachine:", meshmachine)
@@ -523,6 +523,7 @@ def pre_undo_save():
                         print("     save time:", time() - start)
 
 
+
 # ----------------- HANDLERS --------------------
 
 # LOAD POST HANDLER
@@ -539,6 +540,69 @@ def load_post(none):
         print(" reloading msgbus")
 
     reload_msgbus()
+
+
+# PRE-UNDO HANDLER
+
+last_active_operator = None
+
+@persistent
+def undo_pre(scene):
+    global global_debug
+
+    if global_debug:
+        print()
+        print("MACHIN3tools undo pre handler:")
+
+    p = get_prefs()
+
+    # PRE-UNDO SAVING
+
+    if p.activate_save_pie and p.save_pie_use_undo_save:
+        if global_debug:
+            print(" managing pre undo save")
+
+        delay_execution(pre_undo_save)
+
+
+# RENDER INIT / CANCEL / COMPLETE HANDLERS
+
+@persistent
+def render_start(scene):
+    global global_debug
+
+    if global_debug:
+        print()
+        print("MACHIN3tools render start handler:")
+
+    p = get_prefs()
+
+    # LIGHT DESCREASE + VISIBILITY SYNC on RENDER START
+
+    if p.activate_render and (p.render_adjust_lights_on_render or p.render_enforce_hide_render):
+        if global_debug:
+            print(" managing light decrease and light visibility sync")
+
+        delay_execution(manage_lights_decrease_and_visibility_sync)
+
+
+@persistent
+def render_end(scene):
+    global global_debug
+
+    if global_debug:
+        print()
+        print("MACHIN3tools render cancel or complete handler:")
+
+    p = get_prefs()
+
+    # LIGHT INCREASE on RENDER CANCEL/COMPLETE
+
+    if p.activate_render and p.render_adjust_lights_on_render:
+        if global_debug:
+            print(" managing light increase")
+
+        delay_execution(manage_lights_increase)
 
 
 # DEPSGRAPH UPDATE POST HANDLER
@@ -602,69 +666,6 @@ def depsgraph_update_post(scene):
     # ASSET DROP CLEANUP
 
     if global_debug:
-        print(" managing asset drop")
+        print(" managing asset drop cleanup")
 
     delay_execution(manage_asset_drop_cleanup)
-
-
-# RENDER INIT / CANCEL / COMPLETE HANDLERS
-
-@persistent
-def render_start(scene):
-    global global_debug
-
-    if global_debug:
-        print()
-        print("MACHIN3tools render start handler:")
-
-    p = get_prefs()
-
-    # LIGHT DESCREASE + VISIBILITY SYNC on RENDER START
-
-    if p.activate_render and (p.render_adjust_lights_on_render or p.render_enforce_hide_render):
-        if global_debug:
-            print(" managing light decrease and light visibility sync")
-
-        delay_execution(manage_lights_decrease_and_visibility_sync)
-
-
-@persistent
-def render_end(scene):
-    global global_debug
-
-    if global_debug:
-        print()
-        print("MACHIN3tools render cancel or complete handler:")
-
-    p = get_prefs()
-
-    # LIGHT INCREASE on RENDER CANCEL/COMPLETE
-
-    if p.activate_render and p.render_adjust_lights_on_render:
-        if global_debug:
-            print(" managing light increase")
-
-        delay_execution(manage_lights_increase)
-
-
-# PRE-UNDO HANDLER
-
-last_active_operator = None
-
-@persistent
-def undo_pre(scene):
-    global global_debug
-
-    if global_debug:
-        print()
-        print("MACHIN3tools undo pre handler:")
-
-    p = get_prefs()
-
-    # PRE-UNDO SAVING
-
-    if p.activate_save_pie and p.save_pie_use_undo_save:
-        if global_debug:
-            print(" managing pre undo save")
-
-        delay_execution(pre_undo_save)
