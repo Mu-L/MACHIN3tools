@@ -13,11 +13,11 @@ class DrawLabel(bpy.types.Operator):
     text: StringProperty(name="Text to draw the HUD", default='Text')
     coords: FloatVectorProperty(name='Screen Coordinates', size=2, default=(100, 100))
     center: BoolProperty(name='Center', default=True)
-    color: FloatVectorProperty(name='Screen Coordinates', size=3, default=(1, 1, 1))
 
-    time: FloatProperty(name="", default=1, min=0.1)
+    color: FloatVectorProperty(name='Screen Coordinates', size=3, default=(1, 1, 1))
     alpha: FloatProperty(name="Alpha", default=0.5, min=0.1, max=1)
 
+    time: FloatProperty(name="", default=1, min=0.1)
     cancel: StringProperty()
 
     @classmethod
