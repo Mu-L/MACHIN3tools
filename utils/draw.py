@@ -522,12 +522,12 @@ def draw_fading_label(context, text='', x=None, y=100, gap=18, center=True, size
             line_coords = (coords[0], coords[1] - (idx * gap * scale))
             line_color = color if isinstance(color, tuple) else color[idx if idx < len(color) else len(color) - 1]
 
-            bpy.ops.machin3.draw_decal_label(text=t, coords=line_coords, center=center, color=line_color, alpha=alpha, time=time + idx * delay, cancel=cancel)
+            bpy.ops.machin3.draw_label(text=t, coords=line_coords, center=center, color=line_color, alpha=alpha, time=time + idx * delay, cancel=cancel)
 
     else:
         coords = (x, y)
 
-        bpy.ops.machin3.draw_decal_label(text=text, coords=coords, center=center, color=color, alpha=alpha, time=time, cancel=cancel)
+        bpy.ops.machin3.draw_label(text=text, coords=coords, center=center, color=color, alpha=alpha, time=time, cancel=cancel)
 
 
 

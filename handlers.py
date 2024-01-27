@@ -289,7 +289,7 @@ def manage_asset_drop_cleanup():
     # debug = False
 
     if debug:
-        print("  M3 asset drop management")
+        print("  M3 asset drop cleanup")
 
     if was_asset_drop_cleanup_executed:
         if debug:
