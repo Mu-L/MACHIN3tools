@@ -235,7 +235,7 @@ def draw_circle(loc=Vector(), rot=Quaternion(), radius=100, segments='AUTO', wid
     '''
     draw a circle
     no need to pass in a rotation if you draw in 2d space of course
-    and if you skip in in 3d, then the circle will be simply workd z aligned
+    and if you skip it in 3d, then the circle will be simply workd z aligned
     '''
 
     def draw():
