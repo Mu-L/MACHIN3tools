@@ -70,8 +70,8 @@ def clean_up_groups(context):
 # CONTEXT
 
 def get_group_polls(context):
-    active_group = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
-    active_child = context.active_object if context.active_object and context.active_object.parent and context.active_object.M3.is_group_object and context.active_object.select_get() else None
+    active_group = active if (active := context.active_object) and active.M3.is_group_empty and active.select_get() else None
+    active_child = active if (active := context.active_object) and active.parent and active.M3.is_group_object and active.select_get() else None
 
     group_empties = bool([obj for obj in context.visible_objects if obj.M3.is_group_empty])
     groupable = bool([obj for obj in context.selected_objects if (obj.parent and obj.parent.M3.is_group_empty) or not obj.parent])
@@ -163,11 +163,11 @@ def select_group_children(view_layer, empty, recursive=False):
     if empty.hide_get():
         empty.hide_set(False)
 
-        if empty.visible_get(view_layer=view_layer):
+        if empty.visible_get(view_layer=view_layer) and not empty.select_get(view_layer=view_layer):
             empty.select_set(True)
 
     for obj in children:
-        if obj.visible_get(view_layer=view_layer):
+        if obj.visible_get(view_layer=view_layer) and not obj.select_get(view_layer=view_layer):
             obj.select_set(True)
 
         if obj.M3.is_group_empty and recursive:
