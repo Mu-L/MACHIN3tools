@@ -215,7 +215,6 @@ def manage_group():
     if scene and C.mode == 'OBJECT':
         active = active if (active := get_active_object(C)) and active.M3.is_group_empty and active.select_get() else None
 
-
         # AUTO SELECT
 
         if m3.group_select and active:
@@ -236,36 +235,57 @@ def manage_group():
                 active.M3.group_size = active.empty_display_size
 
 
-        # HIDE / UNHIDE
+        if (visible := get_visible_objects(C)):
 
-        if (visible := get_visible_objects(C)) and m3.group_hide:
-            if debug:
-                print("   hiding/unhiding") 
+            group_empties = [obj for obj in visible if obj.M3.is_group_empty]
 
-            selected = [obj for obj in visible if obj.M3.is_group_empty and obj.select_get()]
-            unselected = [obj for obj in visible if obj.M3.is_group_empty and not obj.select_get()]
+            # HIDE / UNHIDE
 
-            # NOTE: not checking if these props are set already, will cause repeated handler calls, even now that things are executed in a timer
+            if m3.group_hide:
+                if debug:
+                    print("   hiding/unhiding") 
 
-            if selected:
-                for group in selected:
-                    if not group.show_name:
-                        group.show_name = True
+                selected = [obj for obj in group_empties if obj.select_get()]
+                unselected = [obj for obj in group_empties if not obj.select_get()]
 
-                    if group.empty_display_size != group.M3.group_size:
-                        group.empty_display_size = group.M3.group_size
+                # NOTE: not checking if these props are set already, will cause repeated handler calls, even now that things are executed in a timer
+                if selected:
+                    for group in selected:
+                        if not group.show_name:
+                            group.show_name = True
 
-            if unselected:
-                for group in unselected:
-                    if group.show_name:
-                        group.show_name = False
+                        if group.empty_display_size != group.M3.group_size:
+                            group.empty_display_size = group.M3.group_size
 
-                    # store existing non-zero size
-                    if round(group.empty_display_size, 4) != 0.0001:
-                        group.M3.group_size = group.empty_display_size
-                        
-                        # then hide the empty, but making it tiny
-                        group.empty_display_size = 0.0001
+                if unselected:
+                    for group in unselected:
+                        if group.show_name:
+                            group.show_name = False
+
+                        # store existing non-zero size
+                        if round(group.empty_display_size, 4) != 0.0001:
+                            group.M3.group_size = group.empty_display_size
+                            
+                            # then hide the empty, but making it tiny
+                            group.empty_display_size = 0.0001
+
+
+            # ACTIVE GROUP DISPLAY TYPE
+            
+            if active:
+                if active and active.empty_display_type != 'SPHERE':
+                    if debug:
+                        print("   setting active group display type to SPHERE")
+
+                    active.empty_display_type = 'SPHERE'
+
+            else:
+                for obj in group_empties:
+                    if obj.empty_display_type != 'CUBE':
+                        if debug:
+                            print("   setting inactive group display type to SPHERE")
+
+                        obj.empty_display_type = 'CUBE'
 
 
 # ASSET DROP CLEANUP
