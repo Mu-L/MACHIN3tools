@@ -5,6 +5,7 @@ import gpu
 from gpu_extras.batch import batch_for_shader
 import blf
 from . wm import get_last_operators
+from . math import get_loc_matrix
 from . registration import get_prefs, get_addon
 from . ui import get_zoom_factor
 from . tools import get_active_tool
@@ -252,7 +253,7 @@ def draw_circle(loc=Vector(), rot=Quaternion(), radius=100, segments='AUTO', wid
         # create the indices to create a cyclic line
         indices = [(i, i + 1) if i < segments - 1 else (i, 0) for i in range(segments)]
 
-        # get the coords of a circle facing upwards, so all z coords will be 0
+        # create circle coords in the origin, of it facing upwards, so all z coords will be 0
         coords = []
 
         for i in range(segments):
@@ -261,8 +262,8 @@ def draw_circle(loc=Vector(), rot=Quaternion(), radius=100, segments='AUTO', wid
             theta = 2 * pi * i / segments
 
             # then the x and y coords
-            x = loc.x + radius * cos(theta)
-            y = loc.y + radius * sin(theta)
+            x = radius * cos(theta)
+            y = radius * sin(theta)
 
             # collect the coords
             coords.append(Vector((x, y, 0)))
@@ -276,7 +277,17 @@ def draw_circle(loc=Vector(), rot=Quaternion(), radius=100, segments='AUTO', wid
         shader.uniform_float("viewportSize", gpu.state.scissor_get()[2:])
         shader.bind()
 
-        batch = batch_for_shader(shader, 'LINES', {"pos": [rot @ co for co in coords]}, indices=indices)
+        # 2d circle (but note the coords are still 3 items)
+        if len(loc) == 2:
+            mx = Matrix()
+            mx.col[3] = loc.resized(4)
+            batch = batch_for_shader(shader, 'LINES', {"pos": [mx @ co for co in coords]}, indices=indices)
+
+        # 3d circle
+        else:
+            mx = Matrix.LocRotScale(loc, rot, Vector.Fill(3, 1))
+            batch = batch_for_shader(shader, 'LINES', {"pos": [mx @ co for co in coords]}, indices=indices)
+
         batch.draw(shader)
 
     if modal:
