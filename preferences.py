@@ -26,12 +26,14 @@ has_hud = ['OT_material_picker',
            'OT_group',
            'OT_transform_edge_constrained',
            'OT_focus',
+           'OT_select_hierarchy',
            'MT_tools_pie',
            'OT_mirror']
 
 is_fading = ['OT_clean_up',
              'OT_clipping_toggle',
              'OT_group',
+             'OT_select_hierarchy',
              'MT_tools_pie']
 
 has_settings = has_sidebar + has_hud + ['OT_smart_vert',
@@ -514,6 +516,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     modal_hud_timeout: FloatProperty(name="HUD timeout", description="Global Timeout Modulation (not exposed in MACHIN3tools)", default=1, min=0.1)
 
     HUD_fade_clean_up: FloatProperty(name="Clean Up HUD Fade Time (seconds)", default=1, min=0.1)
+    HUD_fade_select_hierarchy: FloatProperty(name="Select Hierarchy HUD Fade Time (seconds)", default=1.5, min=0.1)
     HUD_fade_clipping_toggle: FloatProperty(name="Clipping Toggle HUD Fade Time (seconds)", default=1, min=0.1)
     HUD_fade_group: FloatProperty(name="Group HUD Fade Time (seconds)", default=1, min=0.1)
     HUD_fade_tools_pie: FloatProperty(name="Tools Pie HUD Fade Time (seconds)", default=0.75, min=0.1)
@@ -679,6 +682,9 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
                 if getattr(bpy.types, "MACHIN3_OT_group", False):
                     row.prop(self, "HUD_fade_group", text="Group")
+
+                if getattr(bpy.types, "MACHIN3_OT_group", False):
+                    row.prop(self, "HUD_fade_select_hierarchy", text="Select Hierarchy")
 
                 if getattr(bpy.types, "MACHIN3_MT_tools_pie", False):
                     row.prop(self, "HUD_fade_tools_pie", text="Tools Pie")

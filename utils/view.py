@@ -1,3 +1,5 @@
+import bpy
+from typing import Tuple, Union
 from mathutils import Matrix, Vector
 from bpy_extras.view3d_utils import location_3d_to_region_2d
 
@@ -77,3 +79,47 @@ def get_loc_2d(context, loc):
 
     loc_2d = location_3d_to_region_2d(context.region, context.region_data, loc)
     return loc_2d if loc_2d else Vector((-1000, -1000))
+
+
+def get_view_origin_and_dir(context, coord=None) -> Tuple[Vector, Vector]:
+    '''
+    get the view's origin and direction
+    with no coords passed in, use the region center
+
+    ODD: based on my recent tests it actually makes no differences what coords are passed in?
+    even if I pass in the screen corners instead of the center, any vector drawn from these coords, will still originate in the center
+    '''
+
+    if not coord:
+        coord = Vector((context.region.width / 2, context.region.height / 2))
+
+    view_origin = region_2d_to_origin_3d(context.region, context.region_data, coord)
+    view_dir = region_2d_to_vector_3d(context.region, context.region_data, coord)
+
+    return view_origin, view_dir
+
+
+# OBJ VISIBILITY
+
+def ensure_visibility(context, obj: Union[bpy.types.Object, list[bpy.types.Object]], unhide=True):
+    '''
+    works on one, or multiple objects
+    ensure the passed in obj (or list of objects) are in the local view
+
+    optionally (and by default) unhide, if an object is not visible
+    '''
+    
+    view = context.space_data
+
+    objects = obj if type(obj) in [list, set] else [obj]
+
+    # ensure objects are in local view
+    if view.local_view:
+        for obj in objects:
+            obj.local_view_set(view, True)
+
+    # optionally unhide too
+    if unhide:
+        for obj in objects:
+            if not obj.visible_get():
+                obj.hide_set(False)

@@ -98,7 +98,7 @@ class CleanUp(bpy.types.Operator):
         return context.mode == "EDIT_MESH"
 
     def invoke(self, context, event):
-        self.coords = Vector((event.mouse_region_x, event.mouse_region_y)) + Vector((10, 20))
+        self.coords = Vector((event.mouse_region_x, event.mouse_region_y)) + Vector((20, 20))
         return self.execute(context)
 
     def execute(self, context):
