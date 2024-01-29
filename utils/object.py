@@ -209,3 +209,47 @@ def get_visible_objects(context, local_view=False) -> list[bpy.types.Object]:
 
     return [obj for obj in objects if obj.visible_get(view_layer=view_layer)]
 
+
+def get_object_hierarchy_layers(context, debug=False):
+    '''
+    go through all objects of the view_layer, and sort them into hierarchicaly layers, creating a list of lists
+    '''
+
+    def add_layer(layers, depth, debug=False):
+        '''
+        for each object in the last object layer, fetch the children, and create a new layer from them
+        do it recursively
+        '''
+        
+        if debug:
+            print()
+            print("layer", depth)
+
+        children = []
+
+        for obj in layers[-1]:
+            if debug:
+                print("", obj.name)
+
+            for obj in obj.children:
+                children.append(obj)
+
+        if children:
+            depth += 1
+
+            layers.append(children)
+
+            add_layer(layers, depth=depth, debug=debug)
+
+    depth = 0
+
+    # start by fetching the objects at the very top, which are those without any parent
+    top_level_objects = [obj for obj in context.view_layer.objects if not obj.parent]
+
+    # initiate the list of lists, with the first top level layer
+    layers = [top_level_objects]
+
+    # add addiational layers, recursively for as long as there are children
+    add_layer(layers, depth, debug=debug)
+
+    return layers
