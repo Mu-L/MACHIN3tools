@@ -271,21 +271,20 @@ def manage_group():
 
 
             # ACTIVE GROUP DISPLAY TYPE
-            
-            if active:
-                if active and active.empty_display_type != 'SPHERE':
-                    if debug:
-                        print("   setting active group display type to SPHERE")
 
-                    active.empty_display_type = 'SPHERE'
-
-            else:
-                for obj in group_empties:
-                    if obj.empty_display_type != 'CUBE':
+            for group in group_empties:
+                if group == active:
+                    if not group.empty_display_type == 'SPHERE':
                         if debug:
-                            print("   setting inactive group display type to SPHERE")
+                            print("   setting active group display type to SPHERE")
 
-                        obj.empty_display_type = 'CUBE'
+                        group.empty_display_type = 'SPHERE'
+
+                elif group.empty_display_type == 'SPHERE':
+                    if debug:
+                        print("   setting inactive group display type to CUBE")
+
+                    group.empty_display_type = 'CUBE'
 
 
 # ASSET DROP CLEANUP
