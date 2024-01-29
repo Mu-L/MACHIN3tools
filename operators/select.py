@@ -101,7 +101,7 @@ class SelectHierarchy(bpy.types.Operator):
 
     include_parent: BoolProperty(name="Include Parent", description="Include the Parent in the Selection", default=False)
 
-    recursive: BoolProperty(name="Select Recursive Children", description="Select Children Recursively", default=False)
+    recursive: BoolProperty(name="Select Recursive Children", description="Select Children Recursively", default=True)
     unhide: BoolProperty(name="Select Hidden Children", description="Unhide and Select Hidden Children", default=False)
     include_mod_objects: BoolProperty(name="Include Mod Objects", description="Include Mod Objects, even if they aren't parented", default=False)
 
