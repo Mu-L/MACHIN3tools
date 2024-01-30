@@ -1,9 +1,10 @@
+from os import tcgetpgrp
 import bpy
 from bpy.props import EnumProperty, BoolProperty, StringProperty
 from mathutils import Vector
 from .. utils.draw import draw_fading_label
 from .. utils.modifier import get_mod_obj
-from .. utils.object import get_object_hierarchy_layers
+from .. utils.object import get_object_hierarchy_layers, get_parent
 from .. utils.registration import get_prefs
 from .. utils.view import ensure_visibility
 from .. colors import yellow, red, green, white
@@ -99,29 +100,34 @@ class SelectHierarchy(bpy.types.Operator):
 
     direction: StringProperty(name="Hierarchy Direction", default='DOWN')
 
-    include_parent: BoolProperty(name="Include Parent", description="Include the Parent in the Selection", default=False)
+    include_selection: BoolProperty(name="Include Selection", description="Include Current Selection", default=False)
 
-    recursive: BoolProperty(name="Select Recursive Children", description="Select Children Recursively", default=True)
+    # note: for down selection we default to recursive, while for up selections we don't
+    recursive_down: BoolProperty(name="Select Recursive Children", description="Select Children Recursively", default=True)
+    recursive_up: BoolProperty(name="Select Recursive Parents", description="Select Parents Recursively", default=False)
+
     unhide: BoolProperty(name="Select Hidden Children", description="Unhide and Select Hidden Children", default=False)
     include_mod_objects: BoolProperty(name="Include Mod Objects", description="Include Mod Objects, even if they aren't parented", default=False)
 
+    @classmethod
+    def poll(cls, context):
+
+        if context.mode == 'OBJECT':
+            return context.selected_objects
     def draw(self, context):
         layout = self.layout
 
         column = layout.column(align=True)
 
         row = column.row(align=True)
-        row.prop(self, 'include_parent', toggle=True)
-        row.prop(self, 'include_mod_objects', toggle=True)
+        row.prop(self, 'include_selection', toggle=True)
+
+        if self.direction == 'DOWN':
+            row.prop(self, 'include_mod_objects', toggle=True)
 
         row = column.row(align=True)
-        row.prop(self, 'recursive', text="Recursive", toggle=True)
+        row.prop(self, 'recursive_down' if self.direction == 'DOWN' else 'recursive_up', text="Recursive", toggle=True)
         row.prop(self, 'unhide', text="Unhide", toggle=True)
-
-    @classmethod
-    def poll(cls, context):
-        if context.mode == 'OBJECT':
-            return context.selected_objects
 
     def invoke(self, context, event):
         self.coords = Vector((event.mouse_region_x, event.mouse_region_y)) + Vector((20, 20))
@@ -129,33 +135,55 @@ class SelectHierarchy(bpy.types.Operator):
 
     def execute(self, context):
 
-        # get object hierarchy layers
+        # sort view_layer objects into hierarchical list of lists of layers based on their parent child relationships
         layers = get_object_hierarchy_layers(context, debug=False)
 
-        # select down
+
+        # SELECT DOWN
+
         if self.direction == 'DOWN':
             ret = self.select_down(context, context.selected_objects, layers)
 
             if type(ret) == str:
                 time = get_prefs().HUD_fade_select_hierarchy
+                scale = context.preferences.system.ui_scale
 
                 if ret == 'BOTTOM':
                     text = ["Reached Bottom of Hierarchy",
                             "with Hidden Children"]
 
-                    draw_fading_label(context, text=text, x=self.coords[0], y=self.coords[1], center=False, size=12, color=[yellow, white], time=time, alpha=0.5)
+                    draw_fading_label(context, text=text, x=self.coords[0], y=self.coords[1] - 18 * scale, center=False, size=12, color=[yellow, white], time=time, alpha=0.5)
 
                 # note we offset this one down a litte to ensure it's not drawing on top of the previously drawn, and still fading BOTTOM label, after it was encountered first, and then the op was re-invoked with the unhide option
                 elif ret == 'ABSOLUTE_BOTTOM':
-                    scale = context.preferences.system.ui_scale
-                    draw_fading_label(context, text="Reached ABSOLUTE Bottom of Hierarchy", x=self.coords[0], y=self.coords[1] - 20 * scale, center=False, size=12, color=red, time=time, alpha=1)
+                    draw_fading_label(context, text="Reached ABSOLUTE Bottom of Hierarchy", x=self.coords[0], y=self.coords[1] - 36 * scale, center=False, size=12, color=red, time=time, alpha=1)
+
+
+        # SELECT UP
+
+        elif self.direction == 'UP':
+            ret = self.select_up(context, context.selected_objects, layers)
+
+            if type(ret) == str:
+                time = get_prefs().HUD_fade_select_hierarchy
+                scale = context.preferences.system.ui_scale
+
+                if ret == 'TOP':
+                    text = ["Reached Top of Hierarchy",
+                            "with Hidden Parents"]
+
+                    draw_fading_label(context, text=text, x=self.coords[0], y=self.coords[1] - 18 * scale, center=False, size=12, color=[yellow, white], time=time, alpha=0.5)
+
+                # note we offset this one up a litte to ensure it's not drawing on top of the previously drawn, and still fading TOP label, after it was encountered first, and then the op was re-invoked with the unhide option
+                elif ret == 'ABSOLUTE_TOP':
+                    draw_fading_label(context, text="Reached ABSOLUTE Top of Hierarchy", x=self.coords[0], y=self.coords[1] + 18 * scale, center=False, size=12, color=green, time=time, alpha=1)
 
         return {'FINISHED'}
 
 
     # UTILS
 
-    def select_down(self, context, objects, layers, debug=False):
+    def select_down(self, context, objects, layers, debug=False): 
         '''
         based on the current selection select down
         '''
@@ -174,7 +202,7 @@ class SelectHierarchy(bpy.types.Operator):
         for obj in init_selection:
 
             # then collect the children or recursive children for actual selection use
-            if self.recursive:
+            if self.recursive_down:
                 children.update({c for c in obj.children_recursive if c.name in context.view_layer.objects})
             else:
                 children.update({c for c in obj.children if c.name in context.view_layer.objects})
@@ -187,9 +215,10 @@ class SelectHierarchy(bpy.types.Operator):
 
                         if modobj and modobj.name in context.view_layer.objects:
                             children.add(modobj)
-       
-        # ensure visibility (local view) of all children, and optionally unhide if that option is chosen, so they can be selected
-        ensure_visibility(context, children, unhide=self.unhide)
+
+        # unhide (and ensure objects are in local view)
+        if self.unhide:
+            ensure_visibility(context, children, unhide=True)
 
         # from the set of all children, get the visible(selectable) ones, then the hidden ones, and the top_children, which are just the first level visible children
         visible_children = set(c for c in children if c.visible_get())
@@ -210,7 +239,7 @@ class SelectHierarchy(bpy.types.Operator):
 
         # optionally (by default) deselect the parents (original selection)
         # NOTE: this has to come first, you may reselect some of them as children in the next step, if objects from multiple levels were selected initially
-        if not self.include_parent:
+        if not self.include_selection:
 
             # but only if there actually are visible (selectable) children, otherwise you can end up with nothing seleected, which we want to avoid at all costs
             if visible_children:
@@ -240,15 +269,118 @@ class SelectHierarchy(bpy.types.Operator):
 
                 # find first layer in the view_layer's object hierarchy, where now selected visible children are present, this is out top layer
                 for layer in layers:
-                    if (top_lvl_children := set(layer) & visible_children) and active not in top_lvl_children:
-                        
-                        # check if there are group empties, and if so prefer to make a group empty active, instead of a regular object
-                        group_empties = [obj for obj in top_lvl_children if obj.M3.is_group_empty]
+                    if (top_lvl_children := set(layer) & visible_children):
 
-                        if group_empties:
-                            context.view_layer.objects.active = group_empties[0]
-                        else:
-                            context.view_layer.objects.active = top_lvl_children.pop()
+                        # NOTE: has to be a separate line, because we alwas want the break once we find top_lvl_children
+                        # while we only want to change the active, if it's not among those already, which his a separate action
+                        if active not in top_lvl_children:
+                        
+                            # check if there are group empties, and if so prefer to make a group empty active, instead of a regular object
+                            group_empties = [obj for obj in top_lvl_children if obj.M3.is_group_empty]
+
+                            if group_empties:
+                                context.view_layer.objects.active = group_empties[0]
+                            else:
+                                context.view_layer.objects.active = top_lvl_children.pop()
+
+                        break
+
+        return True
+
+
+    def select_up(self, context, objects, layers, debug=False): 
+        '''
+        based on the current selection select down
+        '''
+
+        # debug = True
+
+        parents = set()
+        init_selection = set(objects)
+
+        if debug:
+            print()
+            print("selected:")
+
+            for obj in init_selection:
+                print("", obj.name)
+
+        # get all parent, optionally (by default) recursively
+        for obj in init_selection:
+
+            # then collect the parent's  or recursive parentst for actual selection use
+            if self.recursive_up:
+                parents.update({p for p in get_parent(obj, recursive=True) if p.name in context.view_layer.objects})
+
+            elif obj.parent:
+                parents.add(obj.parent)
+
+        # unhide (and ensure objects are in local view)
+        if self.unhide:
+            ensure_visibility(context, parents, unhide=True)
+
+        # from the set of all parents, get the visible(selectable) ones, then the hidden ones
+        visible_parents = set(p for p in parents if p.visible_get())
+        hidden_parents = set(parents) - visible_parents
+
+        if debug:
+            print()
+            print("parents (visible):")
+
+            for obj in visible_parents:
+                print("", obj.name)
+
+            print()
+            print("parents (hiddden)")
+
+            for obj in hidden_parents:
+                print("", obj.name)
+
+        # optionally (by default) deselect the parents (original selection)
+        # NOTE: this has to come first, you may reselect some of them as children in the next step, if objects from multiple levels were selected initially
+        if not self.include_selection:
+
+            # but only if there actually are visible (selectable) children, otherwise you can end up with nothing seleected, which we want to avoid at all costs
+            if visible_parents:
+                for obj in init_selection:
+                    obj.select_set(False)
+
+        # then select the visible children
+        for obj in visible_parents:
+            obj.select_set(True)
+
+        # compare the new selection to the old one
+        new_selection = set(obj for obj in context.selected_objects)
+
+        # nothing changed, which means we reached the bottom of the hierarchy
+        if init_selection == new_selection:
+            if hidden_parents:
+                return 'TOP'
+
+            else:
+                return 'ABSOLUTE_TOP'
+
+        # selection did change, ensure the active object - if there is one initially - that it is now among the top level children
+        else:
+            active = context.active_object
+
+            if active:
+
+                # find first layer in the view_layer's object hierarchy, where now selected visible children are present, this is out top layer
+                for idx, layer in enumerate(layers):
+                    if (top_lvl_parents := set(layer) & visible_parents):
+
+                        # NOTE: has to be a separate line, because we alwas want the break once we find top_lvl_parents
+                        # while we only want to change the active, if it's not among those already, whic his a separate action
+                        if active not in top_lvl_parents:
+                            
+                            # check if there are group empties, and if so prefer to make a group empty active, instead of a regular object
+                            group_empties = [obj for obj in top_lvl_parents if obj.M3.is_group_empty]
+
+                            if group_empties:
+                                context.view_layer.objects.active = group_empties[0]
+                            else:
+                                context.view_layer.objects.active = top_lvl_parents.pop()
 
                         break
 
