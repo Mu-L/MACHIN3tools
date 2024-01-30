@@ -105,7 +105,7 @@ class SelectHierarchy(bpy.types.Operator):
     include_selection: BoolProperty(name="Include Selection", description="Include Current Selection", default=False)
     include_mod_objects: BoolProperty(name="Include Mod Objects", description="Include Mod Objects, even if they aren't parented", default=False)
 
-    unhide: BoolProperty(name="Select Hidden Children", description="Unhide and Select Hidden Children", default=False)
+    unhide: BoolProperty(name="Unhide + Select", description="Unhide and Select hidden Children/Parents, if you encounter them", default=False)
 
     # note: for down selection we default to recursive, while for up selections we don't
     recursive_down: BoolProperty(name="Select Recursive Children", description="Select Children Recursively", default=True)
