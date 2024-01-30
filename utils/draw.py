@@ -462,6 +462,20 @@ def draw_init(self, event):
     self.offset = 0
 
 
+def get_text_dimensions(context, text='', size=12):
+    '''
+    get dimensions of passed in text at size, taking into account the same scale adjustment done when using draw_label()
+    '''
+    
+    scale = context.preferences.system.ui_scale * get_prefs().modal_hud_scale
+
+    font = 1
+    fontsize = int(size * scale)
+
+    blf.size(font, fontsize)
+    return blf.dimensions(font, text)
+
+
 def update_HUD_location(self, event, offsetx=20, offsety=20):
     '''
     previously, this was done in draw_init
@@ -533,12 +547,12 @@ def draw_fading_label(context, text='', x=None, y=100, gap=18, center=True, size
             line_coords = (coords[0], coords[1] - (idx * gap * scale))
             line_color = color if isinstance(color, tuple) else color[idx if idx < len(color) else len(color) - 1]
 
-            bpy.ops.machin3.draw_label(text=t, coords=line_coords, center=center, color=line_color, alpha=alpha, time=time + idx * delay, cancel=cancel)
+            bpy.ops.machin3.draw_label(text=t, coords=line_coords, center=center, size=size, color=line_color, alpha=alpha, time=time + idx * delay, cancel=cancel)
 
     else:
         coords = (x, y)
 
-        bpy.ops.machin3.draw_label(text=text, coords=coords, center=center, color=color, alpha=alpha, time=time, cancel=cancel)
+        bpy.ops.machin3.draw_label(text=text, coords=coords, center=center, size=size, color=color, alpha=alpha, time=time, cancel=cancel)
 
 
 

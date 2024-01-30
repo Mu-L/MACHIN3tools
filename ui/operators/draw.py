@@ -11,6 +11,8 @@ class DrawLabel(bpy.types.Operator):
     bl_options = {'INTERNAL'}
 
     text: StringProperty(name="Text to draw the HUD", default='Text')
+    size: FloatProperty(name="Text Size", default=12)
+
     coords: FloatVectorProperty(name='Screen Coordinates', size=2, default=(100, 100))
     center: BoolProperty(name='Center', default=True)
 
@@ -28,7 +30,7 @@ class DrawLabel(bpy.types.Operator):
         try:
             if context.area == self.area:
                 alpha = get_timer_progress(self) * self.alpha
-                draw_label(context, title=self.text, coords=self.coords, center=self.center, color=self.color, alpha=alpha)
+                draw_label(context, title=self.text, coords=self.coords, center=self.center, size=self.size, color=self.color, alpha=alpha)
 
         # NOTE: when the HUD label is still drawing, and a new file is loaded, the operator references gets lost, causing an exception
         # ####: all my attempts to far to then finish the op, or remove the draw handler have failed, so I just silince the error for now

@@ -2,7 +2,7 @@ from os import tcgetpgrp
 import bpy
 from bpy.props import EnumProperty, BoolProperty, StringProperty
 from mathutils import Vector
-from .. utils.draw import draw_fading_label
+from .. utils.draw import draw_fading_label, get_text_dimensions
 from .. utils.modifier import get_mod_obj
 from .. utils.object import get_object_hierarchy_layers, get_parent
 from .. utils.registration import get_prefs
@@ -103,19 +103,20 @@ class SelectHierarchy(bpy.types.Operator):
     direction: StringProperty(name="Hierarchy Direction", default='DOWN')
 
     include_selection: BoolProperty(name="Include Selection", description="Include Current Selection", default=False)
+    include_mod_objects: BoolProperty(name="Include Mod Objects", description="Include Mod Objects, even if they aren't parented", default=False)
+
+    unhide: BoolProperty(name="Select Hidden Children", description="Unhide and Select Hidden Children", default=False)
 
     # note: for down selection we default to recursive, while for up selections we don't
     recursive_down: BoolProperty(name="Select Recursive Children", description="Select Children Recursively", default=True)
     recursive_up: BoolProperty(name="Select Recursive Parents", description="Select Parents Recursively", default=False)
-
-    unhide: BoolProperty(name="Select Hidden Children", description="Unhide and Select Hidden Children", default=False)
-    include_mod_objects: BoolProperty(name="Include Mod Objects", description="Include Mod Objects, even if they aren't parented", default=False)
 
     @classmethod
     def poll(cls, context):
 
         if context.mode == 'OBJECT':
             return context.selected_objects
+
     def draw(self, context):
         layout = self.layout
 
@@ -173,12 +174,26 @@ class SelectHierarchy(bpy.types.Operator):
             # UP SELECTION
 
             else:
-                draw_fading_label(context, text="Selecting Up", x=self.coords[0], y=self.coords[1], center=False, size=12, color=white, time=time, alpha=0.5)
+                draw_fading_label(context, text="Selecting Up ", x=self.coords[0], y=self.coords[1], center=False, size=12, color=white, time=time, alpha=0.5)
+                x_offset = get_text_dimensions(context, "Selecting Up ", size=12)[0]
+
+                if self.unhide:
+                    draw_fading_label(context, text="+ Unhiding ", x=self.coords[0] + x_offset, y=self.coords[1] + 5 * scale, center=False, size=10, color=white, time=time, alpha=0.3)
+
+                if self.recursive_up:
+                    draw_fading_label(context, text="+ Recursive ", x=self.coords[0] + x_offset, y=self.coords[1] - 5 * scale, center=False, size=10, color=white, time=time, alpha=0.3)
+
+                if self.include_selection:
+                    if self.unhide:
+                        x_offset += get_text_dimensions(context, "+ Unhiding ", size=10)[0]
+
+                    draw_fading_label(context, text="+ Inclusive", x=self.coords[0] + x_offset, y=self.coords[1] + 5 * scale, center=False, size=10, color=white, time=time, alpha=0.3)
+
 
 
             # ARROW
 
-            draw_fading_label(context, text="🔼", x=self.coords[0] - 70, y=self.coords[1] + 9 * scale, center=False, size=40, color=white, time=time, alpha=0.5)
+            draw_fading_label(context, text="🔼", x=self.coords[0] - 70, y=self.coords[1] + 9 * scale, center=False, size=12, color=white, time=time, alpha=0.25)
 
 
         # SELECT DOWN
@@ -212,11 +227,25 @@ class SelectHierarchy(bpy.types.Operator):
                 y_offset = 0 * scale
 
                 draw_fading_label(context, text="Selecting Down", x=self.coords[0], y=self.coords[1], center=False, size=12, color=white, time=time, alpha=0.5)
+                x_offset = get_text_dimensions(context, "Selecting Down ", size=12)[0]
+
+                if self.unhide:
+                    draw_fading_label(context, text="+ Unhiding ", x=self.coords[0] + x_offset, y=self.coords[1] + 5 * scale, center=False, size=10, color=white, time=time, alpha=0.3)
+
+                if self.recursive_down:
+                    draw_fading_label(context, text="+ Recursive ", x=self.coords[0] + x_offset, y=self.coords[1] - 5 * scale, center=False, size=10, color=white, time=time, alpha=0.3)
+
+                if self.include_selection:
+                    if self.unhide:
+                        x_offset += get_text_dimensions(context, "+ Unhiding ", size=10)[0]
+
+                    draw_fading_label(context, text="+ Inclusive", x=self.coords[0] + x_offset, y=self.coords[1] + 5 * scale, center=False, size=10, color=white, time=time, alpha=0.3)
 
 
             # ARROW 
 
-            draw_fading_label(context, text="🔽", x=self.coords[0] - 70, y=self.coords[1] - 9 * scale, center=False, size=40, color=white, time=time, alpha=0.5)
+            draw_fading_label(context, text="🔽", x=self.coords[0] - 70, y=self.coords[1] - 9 * scale, center=False, size=12, color=white, time=time, alpha=0.25)
+
 
         return {'FINISHED'}
 

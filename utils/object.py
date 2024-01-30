@@ -253,3 +253,22 @@ def get_object_hierarchy_layers(context, debug=False):
     add_layer(layers, depth, debug=debug)
 
     return layers
+
+
+def get_parent(obj, recursive=False, debug=False):
+    '''
+    get parent of the pasted in object
+    optionally recusrively, in which case we return a list instead of a single object
+    '''
+
+    if recursive:
+        parents = []
+
+        while obj.parent:
+            parents.append(obj.parent)
+            obj = obj.parent
+
+        return parents
+
+    else:
+        return obj.parent
