@@ -1580,6 +1580,8 @@ class PieShading(Menu):
         cycles = context.scene.cycles
         column = layout.column(align=True)
 
+        active = active if (active := context.active_object) and active.select_get() else None
+
 
         # DEVICE
 
@@ -1627,13 +1629,21 @@ class PieShading(Menu):
         row.prop(cycles, 'ao_bounces_render', text="Render")
 
 
+        # VISIBLITY (of active object)
+
+        if active:
+            column = layout.column(align=True)
+            row = column.split(factor=0.5, align=True)
+            row.prop(active, 'is_shadow_catcher')
+            row.prop(active, 'is_holdout')
+
+
         # BEVEL SHADER
 
         use_bevel_shader = get_prefs().activate_render and get_prefs().render_use_bevel_shader
 
         if use_bevel_shader:
             m3 = context.scene.M3
-            active = context.active_object if context.active_object and context.active_object.select_get() else None
 
             column = layout.column(align=True)
 
@@ -2488,7 +2498,6 @@ class PieTransform(Menu):
 
 
 # SNAPPING
-
 
 class PieSnapping(Menu):
     bl_idname = "MACHIN3_MT_snapping_pie"
