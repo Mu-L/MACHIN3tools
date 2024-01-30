@@ -92,6 +92,8 @@ class SelectWireObjects(bpy.types.Operator):
 
 # SELECT HIERARCHY
 
+last_ret = ''
+
 class SelectHierarchy(bpy.types.Operator):
     bl_idname = "machin3.select_hierarchy"
     bl_label = "MACHIN3: Select Hierarchy"
@@ -130,10 +132,12 @@ class SelectHierarchy(bpy.types.Operator):
         row.prop(self, 'unhide', text="Unhide", toggle=True)
 
     def invoke(self, context, event):
-        self.coords = Vector((event.mouse_region_x, event.mouse_region_y)) + Vector((20, 20))
+        self.coords = Vector((event.mouse_region_x, event.mouse_region_y)) + Vector((30, -15))
         return self.execute(context)
 
     def execute(self, context):
+        global last_ret
+
         time = get_prefs().HUD_fade_select_hierarchy
         scale = context.preferences.system.ui_scale
 
@@ -146,22 +150,35 @@ class SelectHierarchy(bpy.types.Operator):
         if self.direction == 'UP':
             ret = self.select_up(context, context.selected_objects, layers)
 
+            # REACHED TOP
+
             if type(ret) == str:
                 if ret == 'TOP':
                     text = ["Reached Top of Hierarchy",
                             "with Hidden Parents"]
 
-                    draw_fading_label(context, text=text, x=self.coords[0], y=self.coords[1] - 18 * scale, center=False, size=12, color=[yellow, white], time=time, alpha=0.5)
-                    draw_fading_label(context, text="🔼", x=self.coords[0] - 50, y=self.coords[1] - 18 * scale, center=False, size=20, color=white, time=time, alpha=0.5)
+                    y_offset = 18 * scale
+
+                    draw_fading_label(context, text=text, x=self.coords[0], y=self.coords[1] + y_offset, center=False, size=12, color=[yellow, white], time=time, alpha=0.5)
 
                 # note we offset this one up a litte to ensure it's not drawing on top of the previously drawn, and still fading TOP label, after it was encountered first, and then the op was re-invoked with the unhide option
                 elif ret == 'ABSOLUTE_TOP':
-                    draw_fading_label(context, text="Reached ABSOLUTE Top of Hierarchy", x=self.coords[0], y=self.coords[1] + 18 * scale, center=False, size=12, color=green, time=time, alpha=1)
-                    draw_fading_label(context, text="🔼", x=self.coords[0] - 50, y=self.coords[1] + 18 * scale, center=False, size=20, color=white, time=time, alpha=0.5)
+                    y_offset = 54 * scale if last_ret == 'TOP' else 18 * scale
+
+                    draw_fading_label(context, text="Reached ABSOLUTE Top of Hierarchy", x=self.coords[0], y=self.coords[1] + y_offset, center=False, size=12, color=green, time=time, alpha=1)
+
+                last_ret = ret
+
+
+            # UP SELECTION
 
             else:
-                draw_fading_label(context, text="Selecting Up", x=self.coords[0], y=self.coords[1] - 18 * scale, center=False, size=12, color=white, time=time, alpha=0.5)
-                draw_fading_label(context, text="🔼", x=self.coords[0] - 50, y=self.coords[1] - 18 * scale, center=False, size=20, color=white, time=time, alpha=0.5)
+                draw_fading_label(context, text="Selecting Up", x=self.coords[0], y=self.coords[1], center=False, size=12, color=white, time=time, alpha=0.5)
+
+
+            # ARROW
+
+            draw_fading_label(context, text="🔼", x=self.coords[0] - 70, y=self.coords[1] + 9 * scale, center=False, size=40, color=white, time=time, alpha=0.5)
 
 
         # SELECT DOWN
@@ -169,22 +186,37 @@ class SelectHierarchy(bpy.types.Operator):
         elif self.direction == 'DOWN':
             ret = self.select_down(context, context.selected_objects, layers)
 
+            # REACHED BOTTOM
+
             if type(ret) == str:
                 if ret == 'BOTTOM':
                     text = ["Reached Bottom of Hierarchy",
                             "with Hidden Children"]
 
-                    draw_fading_label(context, text=text, x=self.coords[0], y=self.coords[1] - 18 * scale, center=False, size=12, color=[yellow, white], time=time, alpha=0.5)
-                    draw_fading_label(context, text="🔽", x=self.coords[0] - 50, y=self.coords[1] - 18 * scale, center=False, size=20, color=white, time=time, alpha=0.5)
+                    y_offset = 36 * scale
+
+                    draw_fading_label(context, text=text, x=self.coords[0], y=self.coords[1] -  y_offset, center=False, size=12, color=[yellow, white], time=time, alpha=0.5)
 
                 # note we offset this one down a litte to ensure it's not drawing on top of the previously drawn, and still fading BOTTOM label, after it was encountered first, and then the op was re-invoked with the unhide option
                 elif ret == 'ABSOLUTE_BOTTOM':
-                    draw_fading_label(context, text="Reached ABSOLUTE Bottom of Hierarchy", x=self.coords[0], y=self.coords[1] - 36 * scale, center=False, size=12, color=red, time=time, alpha=1)
-                    draw_fading_label(context, text="🔽", x=self.coords[0] - 50, y=self.coords[1] - 36 * scale, center=False, size=20, color=white, time=time, alpha=0.5)
+                    y_offset = 54 * scale if last_ret == 'BOTTOM' else 18 * scale
+
+                    draw_fading_label(context, text="Reached ABSOLUTE Bottom of Hierarchy", x=self.coords[0], y=self.coords[1] - y_offset, center=False, size=12, color=red, time=time, alpha=1)
+
+                last_ret = ret
+
+
+            # DOWN SELECTION
 
             else:
-                draw_fading_label(context, text="Selecting Down", x=self.coords[0], y=self.coords[1] - 18 * scale, center=False, size=12, color=white, time=time, alpha=0.5)
-                draw_fading_label(context, text="🔽", x=self.coords[0] - 50, y=self.coords[1] - 18 * scale, center=False, size=20, color=white, time=time, alpha=0.5)
+                y_offset = 0 * scale
+
+                draw_fading_label(context, text="Selecting Down", x=self.coords[0], y=self.coords[1], center=False, size=12, color=white, time=time, alpha=0.5)
+
+
+            # ARROW 
+
+            draw_fading_label(context, text="🔽", x=self.coords[0] - 70, y=self.coords[1] - 9 * scale, center=False, size=40, color=white, time=time, alpha=0.5)
 
         return {'FINISHED'}
 
