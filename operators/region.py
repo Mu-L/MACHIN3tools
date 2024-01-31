@@ -858,7 +858,7 @@ class ToggleSIDERegion(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         if context.area:
-            return context.area.type in ['NODE_EDITOR']
+            return context.area.type in ['NODE_EDITOR', 'IMAGE_EDITOR']
 
     def invoke(self, context, event):
 
@@ -953,8 +953,8 @@ class AreaDumper(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        # return True
-        return False
+        return True
+        # return False
 
     def execute(self, context):
 
