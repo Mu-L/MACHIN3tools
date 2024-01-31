@@ -1036,6 +1036,7 @@ class PieShading(Menu):
 
         overlay = context.space_data.overlay
         perspective_type = view.region_3d.view_perspective
+        is_sel_wire = any(obj.show_wire for obj in context.selected_objects)
 
         column = layout.column(align=True)
         row = column.row(align=True)
@@ -1072,6 +1073,9 @@ class PieShading(Menu):
 
         column.separator()
 
+
+        # GRID
+
         row = column.split(factor=0.4, align=True)
         row.operator("machin3.toggle_grid", text="Grid", icon="GRID", depress=overlay.show_ortho_grid if perspective_type == 'ORTHO' and view.region_3d.is_orthographic_side_view else overlay.show_floor)
         r = row.row(align=True)
@@ -1080,19 +1084,36 @@ class PieShading(Menu):
         r.prop(view.overlay, "show_axis_y", text="Y", toggle=True)
         r.prop(view.overlay, "show_axis_z", text="Z", toggle=True)
 
-        row = column.split(factor=0.4, align=True)
-        icon = 'wireframe_xray' if m3.show_edit_mesh_wire else 'wireframe'
-        row.operator("machin3.toggle_wireframe", text="Wireframe", icon_value=get_icon(icon), depress=context.mode=='OBJECT' and overlay.show_wireframes)
 
-        r = row.row(align=True)
-        if context.mode == "OBJECT":
-            r.active = True if view.overlay.show_wireframes or (active and active.show_wire) else False
-            r.prop(view.overlay, "wireframe_opacity", text="Opacity")
-        elif context.mode == "EDIT_MESH":
-            r.active = view.shading.show_xray
-            r.prop(view.shading, "xray_alpha", text="X-Ray")
+        # WIREFRAME
 
-        # object and cursor axes
+        if context.mode in ['OBJECT', 'EDIT_MESH']:
+            row = column.split(factor=0.4, align=True)
+            icon = 'wireframe_xray' if m3.show_edit_mesh_wire else 'wireframe'
+
+            if context.mode == 'OBJECT':
+                depress = overlay.show_wireframes or is_sel_wire
+                text = 'Wireframe (all + selection)' if overlay.show_wireframes and is_sel_wire else 'Wireframe (all)' if overlay.show_wireframes else 'Wireframe (selection)' if is_sel_wire else 'Wireframe'
+
+            elif context.mode == 'EDIT_MESH':
+                depress = m3.show_edit_mesh_wire
+                text = 'Wireframe (xray)' if m3.show_edit_mesh_wire else 'Wireframe'
+
+            row.operator("machin3.toggle_wireframe", text=text, icon_value=get_icon(icon), depress=depress)
+
+            r = row.row(align=True)
+
+            if context.mode == "OBJECT":
+                r.active = True if view.overlay.show_wireframes or (active and active.show_wire) else False
+                r.prop(view.overlay, "wireframe_opacity", text="Opacity")
+
+            elif context.mode == "EDIT_MESH":
+                r.active = view.shading.show_xray
+                r.prop(view.shading, "xray_alpha", text="X-Ray")
+
+
+        # OBJECT and CURSOR AXES
+
         hasaxes = m3.draw_cursor_axes or m3.draw_active_axes or any([obj.M3.draw_axes for obj in context.visible_objects])
 
         row = column.split(factor=0.4, align=True)
@@ -1108,6 +1129,7 @@ class PieShading(Menu):
 
         # row = column.row()
         # row.prop(m3, "draw_cursor_axes", text="Cursor's Axes", icon='EMPTY_AXIS')
+
 
     def draw_solid_box(self, context, view, layout):
         shading = context.space_data.shading
