@@ -1145,7 +1145,7 @@ class PieShading(Menu):
         column = layout.column(align=True)
 
         row = column.row()
-        row = column.split(factor=0.6)
+        row = column.split(factor=0.5)
         row.prop(active, "name", text="")
 
         if active.type == 'ARMATURE':
@@ -1154,7 +1154,7 @@ class PieShading(Menu):
             row.prop(active, "display_type", text="")
 
         if overlay.show_overlays and shading.type in ['SOLID', 'WIREFRAME']:
-            row = column.split(factor=0.6)
+            row = column.split(factor=0.5)
             r = row.row(align=True)
             r.prop(active, "show_name", text="Name")
 
@@ -1164,23 +1164,30 @@ class PieShading(Menu):
                 # r.prop(active, "show_axis", text="Axis")
                 r.prop(active.M3, "draw_axes", text="Axes")
 
-            r = row.row()
+            r = row.row(align=True)
             r.prop(active, "show_in_front", text="In Front")
+
             if shading.color_type == 'OBJECT':
                 r.prop(active, "color", text="")
 
         elif overlay.show_overlays:
-            row = column.split(factor=0.6)
-            row.prop(active, "show_name", text="Name")
+            row = column.split(factor=0.5)
+
+            r = row.row(align=True)
+            r.prop(active, "show_name", text="Name")
 
             if active.type == 'ARMATURE':
-                row.prop(active.data, "show_axes", text="Axes")
+                r.prop(active.data, "show_axes", text="Axes")
             else:
-                row.prop(active, "show_axis", text="Axis")
+                # row.prop(active, "show_axis", text="Axis")
+                r.prop(active.M3, "draw_axes", text="Axes")
+
+            row.separator()
+
 
         elif shading.type in ['SOLID', 'WIREFRAME']:
             if shading.color_type == 'OBJECT':
-                row = column.split(factor=0.5)
+                row = column.split(factor=0.5, align=True)
                 row.prop(active, "show_in_front", text="In Front")
                 row.prop(active, "color", text="")
 
