@@ -311,7 +311,8 @@ class SelectHierarchy(bpy.types.Operator):
                 # except when the active is a group empty, and and auto-select is chosen
                 # NOTE: if you were to deselect the initial selection now, then you wouldn't be able to detect if you are at the top of the hierarchy
                 if (active := context.active_object) and active.M3.is_group_empty and context.scene.M3.group_select:
-                    print("NOTE: Avoiding de-selecting parents, as active is group empty and auto-select is enabled")
+                    if debug:
+                        print("NOTE: Avoiding de-selecting parents, as active is group empty and auto-select is enabled")
 
                 else:
                     for obj in init_selection:

@@ -51,13 +51,21 @@ def get_last_operators(context, debug=False):
 
         # show props, special modes and custom labels
 
+        # -------------------------------------------------------------------------------------------------------
+
         # MACHIN3tools
 
         elif idname == 'machin3.set_tool_by_name':
             prop = prettify_tool_name(op.properties.get('name', ''))
 
+
+        # SWITCH WORKSPACE
+
         elif idname == 'machin3.switch_workspace':
             prop = op.properties.get('name', '')
+
+
+        # SWITCH SHADING
 
         elif idname == 'machin3.switch_shading':
             toggled_overlays = getattr(op, 'toggled_overlays', False)
@@ -66,13 +74,22 @@ def get_last_operators(context, debug=False):
             if toggled_overlays:
                 label = f"{toggled_overlays} Overlays"
 
+
+        # EDIT/OBJECT MODE
+
         elif idname == 'machin3.edit_mode':
             toggled_object = getattr(op, 'toggled_object', False)
             label = 'Object Mode' if toggled_object else 'Edit Mesh Mode'
 
+
+        # MESH MODE
+
         elif idname == 'machin3.mesh_mode':
             mode = op.properties.get('mode', '')
             label = f"{mode.capitalize()} Mode"
+
+
+        # SMART VERT
 
         elif idname == 'machin3.smart_vert':
             if op.properties.get('slideoverride', ''):
@@ -95,6 +112,8 @@ def get_last_operators(context, debug=False):
                     pathtype = getattr(op, 'pathtype', False)
                     prop = mode + 'Pathsby' + pathtype.title()
 
+
+        # SMART EDGE
 
         elif idname == 'machin3.smart_edge':
             if op.properties.get('is_knife_project', False):
@@ -139,6 +158,9 @@ def get_last_operators(context, debug=False):
             elif getattr(op, 'is_turn'):
                 prop = 'Turn'
 
+
+        # SMART FACE
+
         elif idname == 'machin3.smart_face':
             mode = getattr(op, 'mode')
 
@@ -149,9 +171,15 @@ def get_last_operators(context, debug=False):
             elif mode[2]:
                 prop = "MeshFromFaces"
 
+
+        # FOCUS
+
         elif idname == 'machin3.focus':
             if op.properties.get('method', 0) == 1:
                 prop = 'LocalView'
+
+
+        # MIRROR
 
         elif idname == 'machin3.mirror':
             removeall = getattr(op, 'removeall')
@@ -179,6 +207,9 @@ def get_last_operators(context, debug=False):
                     prop = f'Object {axis}'
                 else:
                     prop = f'Local {axis}'
+
+
+        # SHADE SMOOTH/FLAT
 
         elif idname == 'machin3.shade':
             mode = getattr(op, 'mode')
@@ -209,10 +240,22 @@ def get_last_operators(context, debug=False):
             # remove unncessary space at the very beginning
             prop = prop.strip()
 
+
+        # PURGE ORPHANS
+
         elif idname == 'machin3.purge_orphans':
             recursive = getattr(op, 'recursive')
             label = 'Purge Orphans Recursively' if recursive else 'Purge Orphans'
 
+
+        # SELECT HIERARCHY
+
+        elif idname == 'machin3.select_hierarchy':
+            direction = getattr(op, 'direction')
+            label = f"Select Hiearchy {direction.title()}"
+
+
+        # -------------------------------------------------------------------------------------------------------
 
         # DECALmachine
 
@@ -224,6 +267,8 @@ def get_last_operators(context, debug=False):
             undo = getattr(op, 'undo')
             label = "Undo Material Override" if undo else "Material Override"
 
+
+        # -------------------------------------------------------------------------------------------------------
 
         # MESHmachine
 
@@ -247,7 +292,12 @@ def get_last_operators(context, debug=False):
                 label = 'Selected ' + label
 
 
+        # -------------------------------------------------------------------------------------------------------
+
         # HyperCursor
+
+
+        # ADD OBJECT at CURSOR
 
         elif idname == 'machin3.add_object_at_cursor':
             is_pipe_init = getattr(op, 'is_pipe_init', False)
@@ -259,6 +309,8 @@ def get_last_operators(context, debug=False):
                 objtype = getattr(op, 'type', False)
                 label = f"Add {objtype.title()} at Cursor"
 
+
+        # TRANSFORM CURSOR
 
         elif idname == 'machin3.transform_cursor':
             mode = getattr(op, 'mode', False).capitalize()
@@ -290,6 +342,9 @@ def get_last_operators(context, debug=False):
                 # prop = f"{mode}"
                 label = f"{mode} Cursor"
 
+
+        # PICK HYPER BEVEL
+
         elif idname == 'machin3.pick_hyper_bevel':
             mirror = getattr(op, 'mirror')
 
@@ -298,10 +353,16 @@ def get_last_operators(context, debug=False):
             else:
                 label = 'Remove Hyper Bevel'
 
+
+        # POINT CURSOR
+
         elif idname == 'machin3.point_cursor':
             align_y_axis = getattr(op, 'align_y_axis')
             label = 'Point Cursor'
             prop = 'Y' if align_y_axis else 'Z'
+
+
+        # TODO: obsolete?
 
         elif idname == 'machin3.hyper_cursor_object':
             hide_all = getattr(op, 'hide_all_visible_wire_objs')

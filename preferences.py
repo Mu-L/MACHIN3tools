@@ -598,7 +598,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         draw_split_row(self, column, prop='activate_surface_slide', text='Surface Slide', label='Easily modify Mesh Topology, while maintaining Form', factor=0.25)
         draw_split_row(self, column, prop='activate_material_picker', text='Material Picker', label="Pick Materials from the Material Workspace's 3D View", factor=0.25)
         draw_split_row(self, column, prop='activate_apply', text='Apply', label='Apply Transformations while keeping the Bevel Width as well as the Child Transformations unchanged', factor=0.25)
-        draw_split_row(self, column, prop='activate_select', text='Select', label='Select Center Objects or Wire Objects', factor=0.25)
+        draw_split_row(self, column, prop='activate_select', text='Select', label='Select Center Objects, Select/Hide Wire Objects, Select Hierarchy', factor=0.25)
         draw_split_row(self, column, prop='activate_mesh_cut', text='Mesh Cut', label='Knife Intersect a Mesh-Object, using another one', factor=0.25)
         draw_split_row(self, column, prop='activate_thread', text='Thread', label='Easily turn Cylinder Faces into Thread', factor=0.25)
         draw_split_row(self, column, prop='activate_unity', text='Unity', label='Unity related Tools', factor=0.25)
