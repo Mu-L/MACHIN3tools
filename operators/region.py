@@ -849,8 +849,8 @@ class ToggleASSETBROWSERRegion(bpy.types.Operator):
 
 # ANY ?
 
-class ToggleSIDERegion(bpy.types.Operator):
-    bl_idname = "machin3.toggle_side_region"
+class ToggleSIDEBar(bpy.types.Operator):
+    bl_idname = "machin3.toggle_side_bar"
     bl_label = "MACHIN3: Toggle Toolbar or Sidebar (Any Region)"
     bl_description = "Toggle Toolbar or Sidebar (Any Region)"
     bl_options = {'INTERNAL'}
@@ -953,8 +953,8 @@ class AreaDumper(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return True
-        # return False
+        # return True
+        return False
 
     def execute(self, context):
 

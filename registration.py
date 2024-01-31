@@ -56,7 +56,7 @@ classes = {'CORE': [('properties', [('HistoryObjectsCollection', ''),
 
            'REGION': [('operators.region', [('ToggleVIEW3DRegion', 'toggle_view3d_region'),
                                             ('ToggleASSETBROWSERRegion', 'toggle_asset_browser_region'),
-                                            ('ToggleSIDERegion', 'toggle_side_region'),
+                                            ('ToggleSIDEBar', 'toggle_side_bar'),
                                             ('AreaDumper', 'area_dumper')])],
            'SMOOTH': [('operators.smooth', [('ToggleSmooth', 'toggle_smooth')])],
            'THREAD': [('operators.thread', [('Thread', 'add_thread')])],
@@ -200,8 +200,8 @@ keys = {'SMART_VERT': [{'label': 'Merge Last', 'keymap': 'Mesh', 'idname': 'mach
 
         'REGION': [{'label': '3D View', 'keymap': '3D View Generic', 'space_type': 'VIEW_3D', 'idname': 'machin3.toggle_view3d_region', 'type': 'T', 'value': 'PRESS'},
                    {'label': 'Asset Browser', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.toggle_asset_browser_region', 'type': 'T', 'value': 'PRESS'},
-                   {'label': 'UV Editor', 'keymap': 'Image Generic', 'space_type': 'IMAGE_EDITOR', 'idname': 'machin3.toggle_side_region', 'type': 'T', 'value': 'PRESS'},
-                   {'label': 'Node Editor', 'keymap': 'Node Generic', 'space_type': 'NODE_EDITOR', 'idname': 'machin3.toggle_side_region', 'type': 'T', 'value': 'PRESS'}],
+                   {'label': 'UV Editor', 'keymap': 'Image Generic', 'space_type': 'IMAGE_EDITOR', 'idname': 'machin3.toggle_side_bar', 'type': 'T', 'value': 'PRESS'},
+                   {'label': 'Node Editor', 'keymap': 'Node Generic', 'space_type': 'NODE_EDITOR', 'idname': 'machin3.toggle_side_bar', 'type': 'T', 'value': 'PRESS'}],
 
         'SMOOTH': [{'keymap': '3D View Generic', 'space_type': 'VIEW_3D', 'idname': 'machin3.toggle_smooth', 'type': 'TAB', 'value': 'PRESS', 'alt': True, 'info': ['Remap this is if Alt + Tab switches Windows for you']}],
         'RENDER': [{'keymap': 'Node Editor', 'space_type': 'NODE_EDITOR', 'idname': 'machin3.duplicate_nodes', 'type': 'D', 'value': 'PRESS', 'shift': True}],
