@@ -10,6 +10,9 @@ from .. colors import red, yellow
 
 supress_assetbrowser_toggle = False
 
+
+# VIEW 3D
+
 class ToggleVIEW3DRegion(bpy.types.Operator):
     bl_idname = "machin3.toggle_view3d_region"
     bl_label = "MACHIN3: Toggle 3D View Region"
@@ -697,6 +700,8 @@ class ToggleVIEW3DRegion(bpy.types.Operator):
                 return new_area
 
 
+# ASSET BROWSER
+
 class ToggleASSETBROWSERRegion(bpy.types.Operator):
     bl_idname = "machin3.toggle_asset_browser_region"
     bl_label = "MACHIN3: Toggle Asset Browser Region"
@@ -839,13 +844,111 @@ class ToggleASSETBROWSERRegion(bpy.types.Operator):
                 space.show_region_toolbar = not space.show_region_toolbar
 
             elif region_type == 'TOOL_PROPS':
-                space.show_region_tool_props = not space.show_region_tool_props
+                  space.show_region_tool_props = not space.show_region_tool_props
 
+
+# ANY ?
+
+class ToggleSIDERegion(bpy.types.Operator):
+    bl_idname = "machin3.toggle_side_region"
+    bl_label = "MACHIN3: Toggle Toolbar or Sidebar (Any Region)"
+    bl_description = "Toggle Toolbar or Sidebar (Any Region)"
+    bl_options = {'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        if context.area:
+            return context.area.type in ['NODE_EDITOR']
+
+    def invoke(self, context, event):
+
+        # get mouse pos
+        get_mouse_pos(self, context, event, hud=False)
+
+        # get the region type to toggle
+        region_type = self.get_region_type_from_mouse(context, debug=False)
+
+        # then toggle it
+        self.toggle_region(context, region_type, debug=False)
+
+        # context.area.tag_redraw()
+        return {'FINISHED'}
+
+    def get_region_type_from_mouse(self, context, debug=False):
+        '''
+        from the mouse position, get the type of the region you want to toggle
+        unless it's over a non-WINDOW region already, then just toggle this one
+        '''
+
+        # print()
+        # print(context.region.type)
+        # print(self.mouse_pos)
+
+        if context.region.type in ['WINDOW', 'HEADER']:
+            area = context.area
+            region_width = 0
+
+            # get mouse position expresed in percentages, and consider the TOOLS header width too, which pushes the mouse to the right, while keeping the area width unaffected
+            # x_pct = (self.mouse_pos.x / area.width) * 100
+            x_pct = ((self.mouse_pos.x + region_width)/ area.width) * 100
+
+            if x_pct <= 50:
+                side = 'LEFT'
+
+            else:
+                side = 'RIGHT'
+
+            if debug:
+                print()
+                print("area width:", area.width)
+                print("tools region width:", region_width)
+                # print("mouse pos:", self.mouse_pos.x)
+                print("mouse pos, corrected:", self.mouse_pos.x + region_width)
+
+                print()
+                print("mouse.x in %", x_pct)
+
+                print()
+                print(f"side: {side}")
+
+            if side == 'LEFT':
+                return 'TOOLS'
+
+            elif side == 'RIGHT':
+                return 'UI'
+
+        else:
+            return context.region.type
+
+    def toggle_region(self, context, region_type='TOOLS', debug=False):
+        '''
+        toggle region based on type arg
+        '''
+
+        # get context
+        space = context.space_data
+
+        if debug:
+            print()
+            print("toggling:", region_type)
+
+        # Toolbar
+
+        if region_type == 'TOOLS':
+            space.show_region_toolbar = not space.show_region_toolbar
+
+
+        # Sidebar
+
+        elif region_type == 'UI':
+            space.show_region_ui = not space.show_region_ui
+
+
+# DEBUG
 
 class AreaDumper(bpy.types.Operator):
     bl_idname = "machin3.area_dumper"
     bl_label = "MACHIN3: Area Dumper"
-    bl_description = "description"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -857,17 +960,20 @@ class AreaDumper(bpy.types.Operator):
 
         print()
         print("spaces")
+
         for space in context.area.spaces:
-            if space.type == 'FILE_BROWSER':
-                for d in dir(space):
-                    print("", d, getattr(space, d))
+            print("", space.type)
 
-                if space.params:
-                    print()
-                    print("params")
-
-                    for d in dir(space.params):
-                        print("", d, getattr(space.params, d))
+            # if space.type == 'FILE_BROWSER':
+            #     for d in dir(space):
+            #         print("", d, getattr(space, d))
+            #
+            #     if space.params:
+            #         print()
+            #         print("params")
+            #
+            #         for d in dir(space.params):
+            #             print("", d, getattr(space.params, d))
 
 
         return {'FINISHED'}
