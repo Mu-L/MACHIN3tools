@@ -433,15 +433,15 @@ class AlignRelative(bpy.types.Operator):
             active = context.active_object
             return active and [obj for obj in context.selected_objects if obj != active]
 
-    def draw_VIEW3D(self):
-        for obj in self.targets:
-            for batch in self.batches[obj]:
-                draw_mesh_wire(batch, color=green if self.instance else blue, alpha=0.5)
-
     def draw_HUD(self, args):
         context, event = args
 
         draw_label(context, title='Instance' if self.instance else 'Duplicate', coords=Vector((self.HUD_x, self.HUD_y)), center=False, color=green if self.instance else blue)
+
+    def draw_VIEW3D(self):
+        for obj in self.targets:
+            for batch in self.batches[obj]:
+                draw_mesh_wire(batch, color=green if self.instance else blue, alpha=0.5)
 
     def modal(self, context, event):
         context.area.tag_redraw()
@@ -455,6 +455,9 @@ class AlignRelative(bpy.types.Operator):
         # create batches for VIEW3D preview
         for obj in self.targets:
             if obj not in self.batches:
+                if self.debug:
+                    print("new target:", obj.name)
+
                 self.batches[obj] = [get_coords(aligner.data, obj.matrix_world @ self.deltamx[aligner], indices=True) for aligner in self.aligners if aligner.data]
 
         events = ['MOUSEMOVE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE']
@@ -592,7 +595,6 @@ class AlignRelative(bpy.types.Operator):
         init_status(self, context, func=draw_align_relative_status(self))
         self.active.select_set(True)
 
-
         # handlers
         args = (context, event)
         self.HUD = bpy.types.SpaceView3D.draw_handler_add(self.draw_HUD, (args, ), 'WINDOW', 'POST_PIXEL')
@@ -600,6 +602,9 @@ class AlignRelative(bpy.types.Operator):
 
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
+
+
+    # UTILS
 
     def reparent(self, dup_data, target, dup, debug=False):
         '''
