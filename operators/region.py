@@ -565,7 +565,7 @@ class ToggleVIEW3DRegion(bpy.types.Operator):
                     text = ["Can't toggle the Sidebar",
                             "Insufficient View Space"]
 
-                    draw_fading_label(context, text=text, y=100, center=True, size=10, color=red, alpha=1, time=1.2, delay=0.3, cancel='')
+                    draw_fading_label(context, text=text, y=100, center=True, size=12, color=red, alpha=1, time=1.2, delay=0.3, cancel='')
 
 
 
