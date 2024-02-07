@@ -1,5 +1,7 @@
 import bpy
 from bpy.props import EnumProperty, BoolProperty
+from mathutils import Vector
+from .. utils.draw import draw_fading_label
 from .. utils.object import parent, unparent
 from .. utils.group import group, ungroup, get_group_matrix, select_group_children, get_child_depth, clean_up_groups, fade_group_sizes
 from .. utils.collection import get_collection_depth
@@ -7,6 +9,7 @@ from .. utils.registration import get_prefs
 from .. utils.modifier import get_mods_as_dict, add_mods_from_dict
 from .. utils.object import compensate_children
 from .. items import group_location_items
+from .. colors import green, yellow, white
 
 
 # CREATE / DESTRUCT
@@ -53,7 +56,7 @@ class Group(bpy.types.Operator):
         row.prop(self, 'rotation', expand=True)
 
     def invoke(self, context, event):
-        self.coords = (event.mouse_region_x, event.mouse_region_y)
+        self.coords = Vector((event.mouse_region_x, event.mouse_region_y))
 
         return self.execute(context)
 
@@ -65,6 +68,11 @@ class Group(bpy.types.Operator):
             self.group(context, sel)
 
             return {'FINISHED'}
+
+        text = ["ℹℹ Illegal Selection ℹℹ",
+                "You can't create a group from a selection of Objects that are all already parented to something (other other than group empties)"]
+
+        draw_fading_label(context, text=text, x=self.coords.x, y=self.coords.y, color=[yellow, white], alpha=0.75, time=get_prefs().HUD_fade_group * 4, delay=1)
         return {'CANCELLED'}
 
     def group(self, context, sel):
@@ -172,7 +180,9 @@ class Group(bpy.types.Operator):
             fade_group_sizes(context, init=True)
 
         # draw label
-        bpy.ops.machin3.draw_label(text=f"{'Sub' if new_parent else 'Root'}: {empty.name}", coords=self.coords, color=(0.5, 1, 0.5) if new_parent else (1, 1, 1), time=get_prefs().HUD_fade_group, alpha=0.75)
+        text = f"{'Sub' if new_parent else 'Root'} Goup: {empty.name}"
+        color = green if new_parent else yellow
+        draw_fading_label(context, text=text, x=self.coords.x, y=self.coords.y, color=color, alpha=0.75, time=get_prefs().HUD_fade_group)
 
 
 class UnGroup(bpy.types.Operator):
