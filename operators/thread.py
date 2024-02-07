@@ -21,7 +21,7 @@ class Thread(bpy.types.Operator):
     loops: IntProperty(name="Threads", min=1, default=4)
 
     depth: FloatProperty(name="Depth", description="Depth in Percentage of minor Diameter", min=0, max=100, default=5, subtype='PERCENTAGE')
-    fade: FloatProperty(name="Fade", description="Percentage of Segments fading into inner Diameter", min=1, max=50, default=15, subtype='PERCENTAGE')
+    fade: FloatProperty(name="Fade", description="Percentage of Segments fading into inner Diameter", min=1, max=100, default=15, subtype='PERCENTAGE')
 
     h1: FloatProperty(name="Bottom Flank", min=0, default=0.2, step=0.1)
     h2: FloatProperty(name="Crest", min=0, default=0.05, step=0.1)
