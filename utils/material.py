@@ -203,18 +203,18 @@ def adjust_bevel_shader(context, debug=False):
 
                 # BSDF
                 if last_node.type == 'BSDF_PRINCIPLED':
-                    normal_inputs = [last_node.inputs[name] for name in ['Normal', 'Coat Normal'] if not last_node.inputs[name].links]
+                    normal_inputs = [last_node.inputs[name] for name in ['Normal', 'Coat Normal'] if last_node.inputs.get(name) and not last_node.inputs[name].links]
 
                 # decal or trim sheet mats
                 elif decalmachine and (mat.DM.isdecalmat or mat.DM.istrimsheetmat):
 
                     # get decalmat inputs
                     if mat.DM.isdecalmat and mat.DM.decaltype == 'PANEL':
-                        normal_inputs = [last_node.inputs[f"{comp} {name}"] for name in ['Normal', 'Coat Normal'] for comp in ['Material', 'Material 2', 'Subset']]
+                        normal_inputs = [last_node.inputs[f"{comp} {name}"] for name in ['Normal', 'Coat Normal'] for comp in ['Material', 'Material 2', 'Subset'] if last_node.inputs.get(f"{comp} {name}")]
 
                     # get trimsheetmat inputs
                     elif mat.DM.istrimsheetmat:
-                        normal_inputs = [last_node.inputs[name] for name in ['Normal', 'Coat Normal']]
+                        normal_inputs = [last_node.inputs[name] for name in ['Normal', 'Coat Normal'] if last_node.inputs.get(name)]
 
                     # non-panel decals, ignore
                     else:
