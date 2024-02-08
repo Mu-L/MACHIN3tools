@@ -1,4 +1,3 @@
-from os import tcgetpgrp
 import bpy
 from bpy.props import EnumProperty, BoolProperty, StringProperty
 from mathutils import Vector
