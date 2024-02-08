@@ -201,13 +201,20 @@ def get_visible_objects(context, local_view=False) -> list[bpy.types.Object]:
     '''
     is this a safer way to fetch the visible objects, especially for use in handlers?
 
+    NOTE: the "if obj" check in the return statement is done to avoid this weird issue, which happens in an empty scene
+        return [obj for obj in objects if obj.visible_get(view_layer=view_layer)]
+        AttributeError: 'NoneType' object has no attribute 'visible_get'
+    interesting printing objects before that reveals an empty list/generator and no None objects in it
+
     TODO: local_view support, but note that it wont work in a handler, as context.space_data won't exist
     '''
 
     view_layer = context.view_layer
-    objects = getattr(view_layer, 'objects', [])
-
-    return [obj for obj in objects if obj.visible_get(view_layer=view_layer)]
+    objects = getattr(view_layer, 'objects', None)
+    
+    if objects:
+        return [obj for obj in objects if obj and obj.visible_get(view_layer=view_layer)]
+    return []
 
 
 def get_object_hierarchy_layers(context, debug=False):

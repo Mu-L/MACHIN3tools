@@ -42,6 +42,7 @@ def manage_axes_HUD():
 
         # axes_objects = [obj for obj in getattr(bpy.context, 'visible_objects', []) if obj.M3.draw_axes]
         axes_objects = [obj for obj in get_visible_objects(bpy.context) if obj.M3.draw_axes]
+
         active = get_active_object(bpy.context)
 
         if scene.M3.draw_active_axes and active and active not in axes_objects:
