@@ -10,7 +10,7 @@ from . import registration as r
 def group(context, sel, location='AVERAGE', rotation='WORLD'):
     col = get_group_collection(context, sel)
 
-    empty = bpy.data.objects.new(name=get_base_group_name(), object_data=None)
+    empty = bpy.data.objects.new(name=get_group_default_name(), object_data=None)
     empty.M3.is_group_empty = True
     empty.matrix_world = get_group_matrix(context, sel, location, rotation)
     col.objects.link(empty)
@@ -204,7 +204,11 @@ def fade_group_sizes(context, size=None, groups=[], init=False):
 
 # NAMING
 
-def get_base_group_name():
+def get_group_default_name():
+    '''
+    create default group name, based on group naming prefs
+    '''
+    
     p = r.get_prefs()
 
     if r.get_prefs().group_auto_name:
@@ -251,3 +255,39 @@ def update_group_name(group):
         newname = f"{p.group_prefix}{name + '_' + str(c).zfill(3)}{p.group_suffix}"
 
     group.name = newname
+    
+   
+def get_group_base_name(name, debug=False):
+    '''
+    from the passed in group name, eleminate the prefix and suffix if present to get to the basename
+    return the prefix, the basename and the suffix
+    '''
+
+    p = r.get_prefs()
+
+    if r.get_prefs().group_auto_name:
+        basename = name
+
+        if name.startswith(p.group_prefix):
+            prefix = p.group_prefix
+            basename = basename[len(prefix):]
+
+        else:
+            prefix = None
+
+        if name.endswith(p.group_suffix):
+            suffix = p.group_suffix
+            basename = basename[:-len(suffix)]
+        else:
+            suffix = None
+
+        if debug:
+            print()
+            print("name:", name)
+            print("prefix:", prefix)
+            print("basename:", basename)
+            print("suffix:", suffix)
+
+        return prefix, basename, suffix
+    else:
+        return None, name, None
