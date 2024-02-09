@@ -26,7 +26,7 @@ def manage_axes_HUD():
     global global_debug, axesHUD, prev_axes_objects
 
     debug = global_debug
-    debug = False
+    # debug = False
 
     scene = getattr(bpy.context, 'scene', None)
 
@@ -93,7 +93,7 @@ def manage_focus_HUD():
     global global_debug, focusHUD
 
     debug = global_debug
-    debug = False
+    # debug = False
 
     scene = getattr(bpy.context, 'scene', None)
 
@@ -132,7 +132,7 @@ def manage_surface_slide_HUD():
     global global_debug, surfaceslideHUD
 
     debug = global_debug
-    debug = False
+    # debug = False
 
     if debug:
         print("  surface slide HUD")
@@ -169,7 +169,7 @@ def manage_screen_cast_HUD():
     global global_debug, screencastHUD
 
     debug = global_debug
-    debug = False
+    # debug = False
 
     if debug:
         print("  screen cast HUD")
@@ -203,7 +203,7 @@ def manage_group():
     global global_debug
 
     debug = global_debug
-    debug = False
+    # debug = False
 
     if debug:
         print("  group management")
@@ -407,7 +407,7 @@ def manage_lights_decrease_and_visibility_sync():
     global global_debug
 
     debug = global_debug
-    debug = False
+    # debug = False
 
     if debug:
         print("  light descrease and visiblity sync")
@@ -444,7 +444,7 @@ def manage_lights_increase():
     global global_debug
     
     debug = global_debug
-    debug = False
+    # debug = False
 
     if debug:
         print("  light increase")
@@ -476,7 +476,7 @@ def pre_undo_save():
     global global_debug
 
     debug = global_debug
-    debug = False
+    # debug = False
 
     if debug:
         print("  undo save")
