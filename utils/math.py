@@ -25,7 +25,7 @@ def dynamic_format(value, decimal_offset=0):
 
     else:
         precision = decimal_offset
-    return f"{'-' if value < 0 else ''}{abs(value):.{precision}f}"
+    return f"{'-' if value < 0 else ''}{abs(value):.{max(0, precision)}f}"
 
 
 # VECTOR
