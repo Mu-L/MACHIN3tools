@@ -1,6 +1,6 @@
 import bpy
 from .. utils.registration import get_prefs
-from .. utils.group import get_group_polls
+from .. utils.group import get_group_polls, get_group_base_name
 from .. utils.ui import get_icon
 from .. import bl_info
 
@@ -196,56 +196,100 @@ class PanelMACHIN3tools(bpy.types.Panel):
 
         active_group, active_child, group_empties, groupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
 
+        if group_empties:
 
-        # GROUP ORIGIN ADJUSTMENT
-
-        row = column.row()
-        row = column.split(factor=0.3, align=True)
-        row.active = active_group or m3.affect_only_group_origin
-        row.label(text="Group Origin")
-
-        if active_group or m3.affect_only_group_origin:
-
-            if m3.affect_only_group_origin:
-                row.prop(m3, "affect_only_group_origin", text="Disable, when done!", toggle=True, icon_value=get_icon('error'))
-            else:
-                row.prop(m3, "affect_only_group_origin", text="Adjust", toggle=True, icon='OBJECT_ORIGIN')
-
-        else:
-            r = row.split(factor=0.4)
-            r.separator()
-            r.label(text="None")
-
-        column.separator()
+            box = layout.box()
 
 
-        # SCENE PROPS
+            # ACTIVE GROUP
+
+            if active_group:
+                empty = context.active_object
+
+                # GROUP NAME (incl. subdued prefix and suffix)
+
+                prefix, basename, suffix = get_group_base_name(empty.name)
+
+                b = box.box()
+                b.label(text='Active Group')
+
+                row = b.row(align=True)
+                row.alignment = 'LEFT'
+                row.label(text='', icon='SPHERE')
+
+                if prefix:
+                    r = row.row(align=True)
+                    r.alignment = 'LEFT'
+                    r.active = False
+                    r.label(text=prefix)
+
+                r = row.row(align=True)
+                r.alignment = 'LEFT'
+                r.active = True
+                r.label(text=basename)
+
+                if suffix:
+                    r = row.row(align=True)
+                    r.alignment = 'LEFT'
+                    r.active = False
+                    r.label(text=suffix)
+
+
+                # ACTIVE GROUP ORIGIN
+
+                row = b.row()
+                row.scale_y = 1.25
+
+                if m3.affect_only_group_origin:
+                    row.prop(m3, "affect_only_group_origin", text="Disable, when done!", toggle=True, icon_value=get_icon('error'))
+                else:
+                    row.prop(m3, "affect_only_group_origin", text="Adjust Group Origin", toggle=True, icon='OBJECT_ORIGIN')
+
+
+        # GROUP SETTINGS
+
+        b = box.box()
+        b.label(text='Settings')
+
+        column = b.column(align=True)
 
         row = column.split(factor=0.3, align=True)
         row.label(text="Auto Select")
         r = row.row(align=True)
+
         if not p.use_group_sub_menu:
             r.prop(m3, 'show_group_select', text='', icon='HIDE_OFF' if m3.show_group_select else 'HIDE_ON')
+
         r.prop(m3, 'group_select', text='True' if m3.group_select else 'False', toggle=True)
 
         row = column.split(factor=0.3, align=True)
         row.label(text="Recursive")
         r = row.row(align=True)
+
         if not p.use_group_sub_menu:
             r.prop(m3, 'show_group_recursive_select', text='', icon='HIDE_OFF' if m3.show_group_recursive_select else 'HIDE_ON')
+
         r.prop(m3, 'group_recursive_select', text='True' if m3.group_recursive_select else 'False', toggle=True)
 
         row = column.split(factor=0.3, align=True)
         row.label(text="Hide Empties")
         r = row.row(align=True)
+
         if not p.use_group_sub_menu:
             r.prop(m3, 'show_group_hide', text='', icon='HIDE_OFF' if m3.show_group_hide else 'HIDE_ON')
+
         r.prop(m3, 'group_hide', text='True' if m3.group_hide else 'False', toggle=True)
 
 
-        # CREATE / DESTRUCT
+        # TOOLS
 
-        column = layout.column(align=True)
+        b = box.box()
+        b.label(text='Tools')
+
+
+        # CREATE / DESTROY
+
+        column = b.column(align=True)
 
         row = column.row(align=True)
         row.scale_y = 1.2
@@ -265,7 +309,8 @@ class PanelMACHIN3tools(bpy.types.Panel):
 
         # SELECT / DUPLICATE
 
-        column = layout.column(align=True)
+        column.separator()
+        column = column.column(align=True)
 
         row = column.row(align=True)
         row.scale_y = 1.2
@@ -279,7 +324,7 @@ class PanelMACHIN3tools(bpy.types.Panel):
 
         # ADD / REMOVE
 
-        column = layout.column(align=True)
+        column = column.column(align=True)
 
         row = column.row(align=True)
         row.scale_y = 1.2
