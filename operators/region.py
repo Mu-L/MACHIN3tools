@@ -3,7 +3,7 @@ from .. utils.draw import draw_fading_label
 from .. utils.ui import get_mouse_pos, warp_mouse, get_window_space_co2d
 from .. utils.system import printd
 from .. utils.registration import get_prefs
-from .. utils.workspace import is_fullscreen, get_assetbrowser_space
+from .. utils.workspace import is_fullscreen
 from .. utils.asset import get_asset_import_method, get_asset_library_reference, set_asset_import_method, set_asset_library_reference
 from .. colors import red, yellow
 

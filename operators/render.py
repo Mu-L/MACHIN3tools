@@ -1,7 +1,7 @@
 import bpy
 from bpy.props import BoolProperty
 from .. utils.registration import get_prefs
-from .. utils.system import makedir, printd
+from .. utils.system import makedir
 from .. utils.math import dynamic_format
 import os
 import datetime

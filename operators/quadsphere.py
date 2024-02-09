@@ -1,6 +1,5 @@
 import bpy
 from bpy.props import IntProperty, BoolProperty
-from bpy_extras.object_utils import AddObjectHelper
 from math import radians
 
 

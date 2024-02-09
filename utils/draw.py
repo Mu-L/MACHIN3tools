@@ -5,7 +5,6 @@ import gpu
 from gpu_extras.batch import batch_for_shader
 import blf
 from . wm import get_last_operators
-from . math import get_loc_matrix
 from . registration import get_prefs, get_addon
 from . ui import get_zoom_factor
 from . tools import get_active_tool

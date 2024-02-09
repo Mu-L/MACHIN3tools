@@ -1,11 +1,9 @@
 import bpy
-from bpy.props import BoolProperty
 import bmesh
 from mathutils import Vector
 import os
 from .. utils.raycast import cast_obj_ray_from_mouse, cast_bvh_ray_from_mouse
 from .. utils.draw import draw_label, update_HUD_location, draw_init
-from .. utils.registration import get_prefs
 from .. utils.system import printd
 from .. utils.ui import init_cursor, init_status, finish_status
 from .. utils.asset import get_asset_details_from_space

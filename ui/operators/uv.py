@@ -1,7 +1,7 @@
 import bpy
-from bpy.props import EnumProperty, BoolProperty
+from bpy.props import EnumProperty
 import bmesh
-from ... items import uv_axis_items, uv_align_axis_mapping_dict, align_type_items, align_direction_items
+from ... items import uv_axis_items, uv_align_axis_mapping_dict, align_type_items
 
 
 class AlignUV(bpy.types.Operator):

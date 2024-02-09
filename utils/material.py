@@ -1,5 +1,4 @@
 import bpy
-from bpy.types import ThemeDopeSheet
 from mathutils import Vector
 from . registration import get_addon
 from . math import get_sca_matrix

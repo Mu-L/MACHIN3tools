@@ -1,7 +1,7 @@
 from typing import Union
 import bpy
 import bmesh
-from mathutils import Matrix, Vector
+from mathutils import Vector
 from . math import flatten_matrix
 
 

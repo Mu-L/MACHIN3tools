@@ -1,6 +1,6 @@
 import bpy
 import bmesh
-from mathutils import Vector, Matrix
+from mathutils import Vector
 import numpy as np
 
 

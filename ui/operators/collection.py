@@ -1,6 +1,6 @@
 import bpy
 from bpy.props import StringProperty, BoolProperty
-from ... utils.collection import get_groups_collection, get_scene_collections
+from ... utils.collection import get_scene_collections
 
 
 # TODO: store selected objects in blend file an immedeatly relink it into the current scene, call it StoreCollection() or SaveCollection()

@@ -1,7 +1,7 @@
 import bpy
 import bmesh
-from bpy.props import BoolProperty, EnumProperty, IntProperty
-from .. utils.registration import get_prefs, get_addon
+from bpy.props import BoolProperty, EnumProperty
+from .. utils.registration import get_prefs
 from .. utils.view import update_local_view
 from .. items import focus_method_items, focus_levels_items
 

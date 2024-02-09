@@ -4,9 +4,8 @@ from bpy_extras.view3d_utils import region_2d_to_location_3d, region_2d_to_origi
 from mathutils import Vector
 from .. utils.registration import get_addon, get_prefs
 from .. utils.tools import get_active_tool
-from .. utils.object import parent, unparent, get_eval_bbox
+from .. utils.object import get_eval_bbox
 from .. utils.math import compare_matrix
-from .. utils.mesh import get_coords
 from .. utils.modifier import remove_mod, get_mod_obj, move_mod
 from .. utils.ui import get_zoom_factor, get_flick_direction, init_status, finish_status
 from .. utils.draw import draw_vector, draw_circle, draw_point, draw_label, draw_bbox, draw_cross_3d
