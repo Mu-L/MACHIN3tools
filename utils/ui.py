@@ -311,7 +311,7 @@ def draw_keymap_items(kc, name, keylist, layout):
 
                     label = item.get("label")
 
-                row = box.split(factor=0.15)
+                row = box.split(factor=0.25)
                 row.label(text=label)
 
                 # layout.context_pointer_set("keymap", km)
@@ -320,7 +320,7 @@ def draw_keymap_items(kc, name, keylist, layout):
                 # draw info, if available
                 infos = item.get("info", [])
                 for text in infos:
-                    row = box.split(factor=0.15)
+                    row = box.split(factor=0.20)
                     row.separator()
                     row.label(text=text, icon="INFO")
 
