@@ -196,10 +196,9 @@ class PanelMACHIN3tools(bpy.types.Panel):
 
         active_group, active_child, group_empties, groupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
 
+        box = layout.box()
+
         if group_empties:
-
-            box = layout.box()
-
 
             # ACTIVE GROUP
 
